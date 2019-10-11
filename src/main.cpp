@@ -112,6 +112,7 @@ CAmount maxTxFee = DEFAULT_TRANSACTION_MAXFEE;
 CTxMemPool mempool(::minRelayTxFee);
 FeeFilterRounder filterRounder(::minRelayTxFee);
 CTxMemPool stempool(::minRelayTxFee);
+CPoolAggregate allpools;
 
 // Zcoin znode
 map <uint256, int64_t> mapRejectedBlocks GUARDED_BY(cs_main);
@@ -3445,10 +3446,7 @@ bool static DisconnectTip(CValidationState &state, const CChainParams &chainpara
         // previously-confirmed transactions back to the mempool.
         // UpdateTransactionsFromBlock finds descendants of any transactions in this
         // block that were added back and cleans up the mempool state.
-        mempool.UpdateTransactionsFromBlock(vHashUpdate);
-
-	    // Changes to mempool should also be made to Dandelion stempool.
-        stempool.UpdateTransactionsFromBlock(vHashUpdate);
+        allpools.UpdateTransactionsFromBlock(vHashUpdate);
     }
     // Update chainActive and related variables.
     UpdateTip(pindexDelete->pprev, chainparams);

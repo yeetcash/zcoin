@@ -1310,3 +1310,12 @@ bool CTxMemPool::TransactionWithinChainLimit(const uint256 &txid, size_t chainLi
     return it == mapTx.end() || (it->GetCountWithAncestors() < chainLimit &&
                                  it->GetCountWithDescendants() < chainLimit);
 }
+
+/******************************************************************************/
+
+void CPoolAggregate::UpdateTransactionsFromBlock(const std::vector <uint256> &vHashesToUpdate) {
+    mempool.UpdateTransactionsFromBlock(vHashesToUpdate);
+    stempool.UpdateTransactionsFromBlock(vHashesToUpdate);
+}
+
+

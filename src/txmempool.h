@@ -734,4 +734,13 @@ struct TxCoinAgePriorityCompare
     }
 };
 
+/**
+ * Aggregates mempool and stempool to avoid code duplication. 
+ * Delegates all the calls to the mempool and the stempool global instances
+ */
+struct CPoolAggregate {
+public:
+    void UpdateTransactionsFromBlock(const std::vector <uint256> &vHashesToUpdate);
+};
+
 #endif // BITCOIN_TXMEMPOOL_H
