@@ -19,6 +19,8 @@
 using namespace std;
 using namespace sigma;
 
+extern CPoolAggregate allpools;
+
 CHDMintTracker::CHDMintTracker(std::string strWalletFile)
 {
     this->strWalletFile = strWalletFile;
@@ -690,8 +692,7 @@ std::set<uint256> CHDMintTracker::GetMempoolTxids(){
     setMempool.clear();
     {
         LOCK(mempool.cs);
-        mempool.getTransactions(setMempool);
-        stempool.getTransactions(setMempool);
+        allpools.getTransactions(setMempool);
     }
     return setMempool;
 }

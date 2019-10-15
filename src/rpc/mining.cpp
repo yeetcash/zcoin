@@ -34,7 +34,7 @@
 
 using namespace std;
 
-extern CTxMemPool stempool;
+extern CPoolAggregate allpools;
 
 /**
  * Return average network hashes per second based on the last 'lookup' blocks,
@@ -358,10 +358,7 @@ UniValue prioritisetransaction(const UniValue& params, bool fHelp)
     uint256 hash = ParseHashStr(params[0].get_str(), "txid");
     CAmount nAmount = params[2].get_int64();
 
-    mempool.PrioritiseTransaction(hash, params[0].get_str(), params[1].get_real(), nAmount);
-
-    // Changes to mempool should also be made to Dandelion stempool
-    stempool.PrioritiseTransaction(hash, params[0].get_str(), params[1].get_real(), nAmount);
+    allpools.PrioritiseTransaction(hash, params[0].get_str(), params[1].get_real(), nAmount);
 
     return true;
 }

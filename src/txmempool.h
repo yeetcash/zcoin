@@ -741,6 +741,13 @@ struct TxCoinAgePriorityCompare
 struct CPoolAggregate {
 public:
     void UpdateTransactionsFromBlock(const std::vector <uint256> &vHashesToUpdate);
+    void AddTransactionsUpdated(unsigned int n);
+    void removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags);
+    void PrioritiseTransaction(const uint256 hash, const string strHash, double dPriorityDelta, const CAmount &nFeeDelta);
+    void setSanityCheck(double dFrequency = 1.0);
+    void getTransactions(std::set<uint256>& setTxid);
+    void check(const CCoinsViewCache *pcoins) const;
+    void clear();
 };
 
 #endif // BITCOIN_TXMEMPOOL_H

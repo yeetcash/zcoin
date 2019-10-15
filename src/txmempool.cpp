@@ -1318,4 +1318,39 @@ void CPoolAggregate::UpdateTransactionsFromBlock(const std::vector <uint256> &vH
     stempool.UpdateTransactionsFromBlock(vHashesToUpdate);
 }
 
+void CPoolAggregate::AddTransactionsUpdated(unsigned int n) {
+    mempool.AddTransactionsUpdated(n);
+    stempool.AddTransactionsUpdated(n);
+}
+
+void CPoolAggregate::removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags) {
+    mempool.removeForReorg(pcoins, nMemPoolHeight, flags);
+    stempool.removeForReorg(pcoins, nMemPoolHeight, flags);
+}
+
+void CPoolAggregate::PrioritiseTransaction(const uint256 hash, const string strHash, double dPriorityDelta,
+                                       const CAmount &nFeeDelta) {
+    mempool.PrioritiseTransaction(hash, strHash, dPriorityDelta, nFeeDelta);
+    stempool.PrioritiseTransaction(hash, strHash, dPriorityDelta, nFeeDelta);
+}
+
+void CPoolAggregate::setSanityCheck(double dFrequency) {
+    mempool.setSanityCheck(dFrequency);
+    stempool.setSanityCheck(dFrequency);
+}
+
+void CPoolAggregate::getTransactions(std::set<uint256>& setTxid) {
+    mempool.getTransactions(setTxid);
+    stempool.getTransactions(setTxid);
+}
+
+void CPoolAggregate::check(const CCoinsViewCache *pcoins) const {
+    mempool.check(pcoins);
+    stempool.check(pcoins);
+}
+
+void CPoolAggregate::clear() {
+    mempool.clear();
+    stempool.clear();
+}
 

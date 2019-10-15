@@ -355,6 +355,18 @@ bool AcceptToMemoryPool(
         bool isCheckWalletTransaction = false,
         bool markZcoinSpendTransactionSerial = true);
 
+bool AcceptToMemoryPool(
+        CPoolAggregate& poolAggr,
+        CValidationState &state,
+        const CTransaction &tx,
+        bool fCheckInputs,
+        bool fLimitFree,
+        bool* pfMissingInputs,
+        bool fOverrideMempoolLimit=false,
+        const CAmount nAbsurdFee=0,
+        bool isCheckWalletTransaction = false,
+        bool markZcoinSpendTransactionSerial = true);
+
 /** Convert CValidationState to a human-readable message for logging */
 std::string FormatStateMessage(const CValidationState &state);
 

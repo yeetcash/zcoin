@@ -1850,14 +1850,14 @@ bool AcceptToMemoryPoolWorker(
 }
 
 bool AcceptToMemoryPool(
-	    CTxMemPool &pool,
-	    CValidationState &state,
-	    const CTransaction &tx,
-	    bool fCheckInputs,
+        CTxMemPool &pool,
+        CValidationState &state,
+        const CTransaction &tx,
+        bool fCheckInputs,
         bool fLimitFree,
         bool *pfMissingInputs,
-	    bool fOverrideMempoolLimit,
-	    const CAmount nAbsurdFee,
+        bool fOverrideMempoolLimit,
+        const CAmount nAbsurdFee,
         bool isCheckWalletTransaction,
         bool markZcoinSpendTransactionSerial) {
     LogPrintf("AcceptToMemoryPool(), transaction: %s, fCheckInputs=%s\n",
@@ -1881,6 +1881,52 @@ bool AcceptToMemoryPool(
         BOOST_FOREACH(const uint256 &hashTx, vHashTxToUncache)
             pcoinsTip->Uncache(hashTx);
     }
+    return res;
+}
+
+bool AcceptToMemoryPool(
+        CPoolAggregate &poolAggr,
+        CValidationState &state,
+        const CTransaction &tx,
+        bool fCheckInputs,
+        bool fLimitFree,
+        bool *pfMissingInputs,
+        bool fOverrideMempoolLimit,
+        const CAmount nAbsurdFee,
+        bool isCheckWalletTransaction,
+        bool markZcoinSpendTransactionSerial) {
+    LogPrintf("AcceptToMemoryPool(), transaction: %s, fCheckInputs=%s\n",
+              tx.GetHash().ToString(),
+              fCheckInputs);
+    std::vector <uint256> vHashTxToUncache;
+    bool res = AcceptToMemoryPoolWorker(
+        mempool, state, tx, fCheckInputs, fLimitFree, pfMissingInputs,
+        fOverrideMempoolLimit, nAbsurdFee,
+        vHashTxToUncache, isCheckWalletTransaction,
+        markZcoinSpendTransactionSerial);
+    if (res) {
+        LogPrintf("AcceptToMemoryPool: Successfully added txn %s to the mempool.\n", tx.ToString());
+    }
+    else {
+        LogPrintf("AcceptToMemoryPool: FAILED to add txn %s to the mempool.\n", tx.ToString());
+        BOOST_FOREACH(const uint256 &hashTx, vHashTxToUncache)
+            pcoinsTip->Uncache(hashTx);
+    }
+
+    bool res_stem = AcceptToMemoryPoolWorker(
+        stempool, state, tx, fCheckInputs, fLimitFree, pfMissingInputs,
+        fOverrideMempoolLimit, nAbsurdFee,
+        vHashTxToUncache, isCheckWalletTransaction,
+        false);
+    if (res_stem) {
+        LogPrintf("AcceptToMemoryPool: Successfully added txn %s to the stempool.\n", tx.ToString());
+    }
+    else {
+        LogPrintf("AcceptToMemoryPool: FAILED to add txn %s to the stempool.\n", tx.ToString());
+        BOOST_FOREACH(const uint256 &hashTx, vHashTxToUncache)
+            pcoinsTip->Uncache(hashTx);
+    }
+
     return res;
 }
 
@@ -3311,10 +3357,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams &chainParams) {
 
     // New best block
     nTimeBestReceived = GetTime();
-    mempool.AddTransactionsUpdated(1);
-
-    // Changes to mempool should also be made to Dandelion stempool
-    stempool.AddTransactionsUpdated(1);
+    allpools.AddTransactionsUpdated(1);
 
     cvBlockChange.notify_all();
     static bool fWarned = false;
@@ -3846,15 +3889,11 @@ static bool ActivateBestChainStep(CValidationState &state, const CChainParams &c
     }
 
     if (fBlocksDisconnected) {
-        mempool.removeForReorg(
+        allpools.removeForReorg(
             pcoinsTip,
             chainActive.Tip()->nHeight + 1,
             STANDARD_LOCKTIME_VERIFY_FLAGS);
 	    // Changes to mempool should also be made to Dandelion stempool
-        stempool.removeForReorg(
-            pcoinsTip,
-	        chainActive.Tip()->nHeight + 1,
-	        STANDARD_LOCKTIME_VERIFY_FLAGS);
 
         LimitMempoolSize(mempool,
                          GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000,
@@ -3865,9 +3904,7 @@ static bool ActivateBestChainStep(CValidationState &state, const CChainParams &c
                          GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000,
                          GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
     }
-    mempool.check(pcoinsTip);
-    // Changes to mempool should also be made to Dandelion stempool
-    stempool.check(pcoinsTip);
+    allpools.check(pcoinsTip);
 
     // Callbacks/notifications for a new best chain.
     if (fInvalidFound)
@@ -4013,10 +4050,7 @@ bool InvalidateBlock(CValidationState &state, const CChainParams &chainparams, C
         // ActivateBestChain considers blocks already in chainActive
         // unconditionally valid already, so force disconnect away from it.
         if (!DisconnectTip(state, chainparams)) {
-            mempool.removeForReorg(
-                pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
-            // Changes to mempool should also be made to Dandelion stempool
-            stempool.removeForReorg(
+            allpools.removeForReorg(
                 pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
             return false;
         }
@@ -4041,13 +4075,7 @@ bool InvalidateBlock(CValidationState &state, const CChainParams &chainparams, C
     }
 
     InvalidChainFound(pindex);
-    mempool.removeForReorg(
-        pcoinsTip,
-        chainActive.Tip()->nHeight + 1,
-        STANDARD_LOCKTIME_VERIFY_FLAGS);
-
-    // Changes to mempool should also be made to Dandelion stempool
-    stempool.removeForReorg(
+    allpools.removeForReorg(
         pcoinsTip,
         chainActive.Tip()->nHeight + 1,
         STANDARD_LOCKTIME_VERIFY_FLAGS);
@@ -5393,8 +5421,7 @@ void UnloadBlockIndex() {
     chainActive.SetTip(NULL);
     pindexBestInvalid = NULL;
     pindexBestHeader = NULL;
-    mempool.clear();
-    stempool.clear();
+    allpools.clear();
     mapOrphanTransactions.clear();
     mapOrphanTransactionsByPrev.clear();
     nSyncStarted = 0;
@@ -6896,10 +6923,7 @@ bool static ProcessMessage(CNode *pfrom, string strCommand,
                 return false;
             }
 
-            mempool.PrioritiseTransaction(hashTx, hashTx.ToString(), 1000, 0.1 * COIN);
-
-            // Changes to mempool should also be made to Dandelion stempool
-            stempool.PrioritiseTransaction(hashTx, hashTx.ToString(), 1000, 0.1 * COIN);
+            allpools.PrioritiseTransaction(hashTx, hashTx.ToString(), 1000, 0.1 * COIN);
 
             pmn->fAllowMixingTx = false;
         }
@@ -6914,23 +6938,9 @@ bool static ProcessMessage(CNode *pfrom, string strCommand,
         pfrom->setAskFor.erase(inv.hash);
         mapAlreadyAskedFor.erase(inv.hash);
         if (!AlreadyHave(inv) && !tx.IsZerocoinSpend() &&
-            AcceptToMemoryPool(mempool, state, tx, true, true, &fMissingInputs, false, 0, true)) {
+            AcceptToMemoryPool(allpools, state, tx, true, true, &fMissingInputs, false, 0, true)) {
             LogPrintf("Transaction %s received and added to the mempool.\n",
                       tx.GetHash().ToString());
-
-            // Changes to mempool should also be made to Dandelion stempool.
-            AcceptToMemoryPool(
-                stempool,
-                dummyState,
-                tx,
-                true, /* fCheckInputs */
-                true, /* fLimitFree */
-                &fMissingInputs, /* pfMissingInputs */
-                false, /* fOverrideMempoolLimit */
-                0, /* nAbsurdFee */
-                true, /* isCheckWalletTransaction */
-                false /* markZcoinSpendTransactionSerial */
-            );
 
             if (CNode::isTxDandelionEmbargoed(tx.GetHash())) {
                 //LogPrintf(
@@ -6982,22 +6992,9 @@ bool static ProcessMessage(CNode *pfrom, string strCommand,
 
                     if (setMisbehaving.count(fromPeer))
                         continue;
-                    if (AcceptToMemoryPool(mempool, stateDummy, orphanTx, true, true,
+                    if (AcceptToMemoryPool(allpools, stateDummy, orphanTx, true, true,
                             &fMissingInputs2, false, 0, true)) {
                         // LogPrintf("Accepted orphan tx %s\n", orphanHash.ToString());
-                        // Changes to mempool should also be made to Dandelion stempool
-                        AcceptToMemoryPool(
-                            stempool,
-                            stateDummyDandelion,
-                            orphanTx,
-                            false, /* fCheckInputs */
-                            true, /* fLimitFree */
-                            &fMissingInputs2,  /* pfMissingInputs */
-                            false, /* fOverrideMempoolLimit */
-                            0, /* nAbsurdFee */
-                            true, /* isCheckWalletTransaction */
-                            false /* markZcoinSpendTransactionSerial */
-                        );
 
                         RelayTransaction(orphanTx);
                         for (unsigned int i = 0; i < orphanTx.vout.size(); i++) {
@@ -7037,33 +7034,20 @@ bool static ProcessMessage(CNode *pfrom, string strCommand,
             //btzc: zcoin condition
         } else if (
             !AlreadyHave(inv) && tx.IsZerocoinSpend() && !tx.IsSigmaSpend() &&
-            AcceptToMemoryPool(mempool, state, tx, false, true, &fMissingInputsZerocoin, false, 0, true)) {
-            // Changes to mempool should also be made to Dandelion stempool
-            AcceptToMemoryPool(
-                stempool,
-                dummyState,
-                tx,
-                false, /* fCheckInputs */
-                true, /* fLimitFree */
-                &fMissingInputsZerocoin,  /* pfMissingInputs */
-                false, /* fOverrideMempoolLimit */
-                0, /* nAbsurdFee */
-                true, /* isCheckWalletTransaction */
-                false /* markZcoinSpendTransactionSerial */
-            );
-            if (CNode::isTxDandelionEmbargoed(tx.GetHash())) {
-                //LogPrintf("Embargoed dandeliontx %s found in mempool; removing from embargo map.\n",
-                //          tx.GetHash().ToString());
-                CNode::removeDandelionEmbargo(tx.GetHash());
-            }
-            // Changes to mempool should also be made to Dandelion stempool
-            stempool.check(pcoinsTip);
+            AcceptToMemoryPool(allpools, state, tx, false, true, &fMissingInputsZerocoin, false, 0, true)) {
+                if (CNode::isTxDandelionEmbargoed(tx.GetHash())) {
+                    //LogPrintf("Embargoed dandeliontx %s found in mempool; removing from embargo map.\n",
+                    //          tx.GetHash().ToString());
+                    CNode::removeDandelionEmbargo(tx.GetHash());
+                }
+                // Changes to mempool should also be made to Dandelion stempool
+                stempool.check(pcoinsTip);
 
-            RelayTransaction(tx);
-//          LogPrint("mempool", "AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)\n",
-//                   pfrom->id,
-//                   tx.GetHash().ToString(),
-//                   mempool.size(), mempool.DynamicMemoryUsage() / 1000);
+                RelayTransaction(tx);
+    //          LogPrint("mempool", "AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)\n",
+    //                   pfrom->id,
+    //                   tx.GetHash().ToString(),
+    //                   mempool.size(), mempool.DynamicMemoryUsage() / 1000);
         } else if (fMissingInputs) {
             bool fRejectedParents = false; // It may be the case that the orphans parents have all been rejected
             BOOST_FOREACH(
