@@ -19,7 +19,7 @@
 using namespace std;
 using namespace sigma;
 
-extern CPoolAggregate allpools;
+extern CTxPoolAggregate txpools;
 
 CHDMintTracker::CHDMintTracker(std::string strWalletFile)
 {
@@ -349,15 +349,15 @@ bool CHDMintTracker::IsMempoolSpendOurs(const std::set<uint256>& setMempool, con
     // get transaction back from mempool
     // if spend, get hash of serial
     // if matches mint.hashSerial, mark pending spend.
-    for(auto& mempoolTxid : setMempool){
-        auto it = mempool.mapTx.find(mempoolTxid);
-        if (it == mempool.mapTx.end()){
-            it = stempool.mapTx.find(mempoolTxid);
-            if (it == stempool.mapTx.end())
-                continue;
+    for(uint256 const & mempoolTxid : setMempool){
+
+        std::shared_ptr<const CTransaction> ptx = txpools.get(mempoolTxid);
+
+        if(!ptx) {
+            continue;
         }
 
-        const CTransaction &tx = it->GetTx();
+        const CTransaction &tx = *ptx;
         for (const CTxIn& txin : tx.vin) {
             if (txin.IsSigmaSpend()) {
                 std::unique_ptr<sigma::CoinSpend> spend;
@@ -692,7 +692,7 @@ std::set<uint256> CHDMintTracker::GetMempoolTxids(){
     setMempool.clear();
     {
         LOCK(mempool.cs);
-        allpools.getTransactions(setMempool);
+        txpools.getTransactions(setMempool);
     }
     return setMempool;
 }

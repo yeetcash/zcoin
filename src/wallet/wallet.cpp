@@ -1819,8 +1819,7 @@ bool CWalletTx::InMempool() const {
 }
 
 bool CWalletTx::InStempool() const {
-    LOCK(stempool.cs);
-    if (stempool.exists(GetHash())) {
+    if (txpools.getStemTxPool().exists(GetHash())) {
         return true;
     }
     return false;
@@ -8217,7 +8216,7 @@ bool CMerkleTx::AcceptToMemoryPool(
               fCheckInputs);
     if (GetBoolArg("-dandelion", true)) {
         bool res = ::AcceptToMemoryPool(
-            stempool,
+            txpools.getStemTxPool(),
             state,
             *this,
             fCheckInputs,
@@ -8236,22 +8235,9 @@ bool CMerkleTx::AcceptToMemoryPool(
         }
         return res;
     } else {
-        // Changes to mempool should also be made to Dandelion stempool
         CValidationState dummyState;
-        ::AcceptToMemoryPool(
-            stempool,
-            dummyState,
-            *this,
-            fCheckInputs,
-            fLimitFree,
-            NULL, /* pfMissingInputs */
-            false, /* fOverrideMempoolLimit */
-            nAbsurdFee,
-            isCheckWalletTransaction,
-            false /* markZcoinSpendTransactionSerial */
-        );
         return ::AcceptToMemoryPool(
-            mempool,
+            txpools,
             state,
             *this,
             fCheckInputs,

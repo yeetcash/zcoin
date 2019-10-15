@@ -184,7 +184,7 @@ struct BlockHasher
 extern CScript COINBASE_FLAGS;
 extern CCriticalSection cs_main;
 extern CTxMemPool mempool;
-extern CTxMemPool stempool;
+extern CTxPoolAggregate txpools;
 typedef boost::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
 extern BlockMap mapBlockIndex;
 extern uint64_t nLastBlockTx;
@@ -356,8 +356,8 @@ bool AcceptToMemoryPool(
         bool markZcoinSpendTransactionSerial = true);
 
 bool AcceptToMemoryPool(
-        CPoolAggregate& poolAggr,
-        CValidationState &state,
+        CTxPoolAggregate & poolAggr,
+        CValidationState & state,
         const CTransaction &tx,
         bool fCheckInputs,
         bool fLimitFree,

@@ -636,7 +636,7 @@ public:
     bool exists(uint256 hash) const
     {
         LOCK(cs);
-        return (mapTx.count(hash) != 0);
+        return mapTx.find(hash) != mapTx.end();
     }
 
     std::shared_ptr<const CTransaction> get(const uint256& hash) const;
@@ -735,10 +735,13 @@ struct TxCoinAgePriorityCompare
 };
 
 /**
- * Aggregates mempool and stempool to avoid code duplication. 
- * Delegates all the calls to the mempool and the stempool global instances
+ * Aggregates mempool and stem pool to avoid code duplication. 
+ * Delegates all the calls to the mempool and the stem pool global instances
  */
-struct CPoolAggregate {
+class CTxPoolAggregate {
+public:
+    CTxPoolAggregate(const CFeeRate& minReasonableRelayFee);
+    CTxMemPool & getStemTxPool();
 public:
     void UpdateTransactionsFromBlock(const std::vector <uint256> &vHashesToUpdate);
     void AddTransactionsUpdated(unsigned int n);
@@ -747,7 +750,12 @@ public:
     void setSanityCheck(double dFrequency = 1.0);
     void getTransactions(std::set<uint256>& setTxid);
     void check(const CCoinsViewCache *pcoins) const;
+    std::shared_ptr<const CTransaction> get(const uint256& hash) const;
     void clear();
+    void removeForBlock(const std::vector<CTransaction>& vtx, unsigned int nBlockHeight,
+                        std::list<CTransaction>& conflicts, bool fCurrentEstimate = true);
+private:
+    CTxMemPool stemTxPool;
 };
 
 #endif // BITCOIN_TXMEMPOOL_H

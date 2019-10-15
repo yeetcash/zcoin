@@ -34,7 +34,7 @@
 
 using namespace std;
 
-extern CPoolAggregate allpools;
+extern CTxPoolAggregate txpools;
 
 /**
  * Return average network hashes per second based on the last 'lookup' blocks,
@@ -358,7 +358,7 @@ UniValue prioritisetransaction(const UniValue& params, bool fHelp)
     uint256 hash = ParseHashStr(params[0].get_str(), "txid");
     CAmount nAmount = params[2].get_int64();
 
-    allpools.PrioritiseTransaction(hash, params[0].get_str(), params[1].get_real(), nAmount);
+    txpools.PrioritiseTransaction(hash, params[0].get_str(), params[1].get_real(), nAmount);
 
     return true;
 }

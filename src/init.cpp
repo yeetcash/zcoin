@@ -118,7 +118,7 @@ enum BindFlags {
 
 static const char *FEE_ESTIMATES_FILENAME = "fee_estimates.dat";
 
-extern CPoolAggregate allpools;
+extern CTxPoolAggregate txpools;
 
 namespace fs = boost::filesystem;
 
@@ -225,7 +225,7 @@ void Shutdown() {
     /// Be sure that anything that writes files or flushes caches only does this if the respective
     /// module was initialized.
     RenameThread("bitcoin-shutoff");
-    allpools.AddTransactionsUpdated(1);
+    txpools.AddTransactionsUpdated(1);
 
     StopHTTPRPC();
     StopREST();
@@ -1222,7 +1222,7 @@ bool AppInit2(boost::thread_group &threadGroup, CScheduler &scheduler) {
     int ratio = std::min<int>(std::max<int>(GetArg("-checkmempool", chainparams.DefaultConsistencyChecks() ? 1 : 0), 0),
                               1000000);
     if (ratio != 0) {
-        allpools.setSanityCheck(1.0 / ratio);
+        txpools.setSanityCheck(1.0 / ratio);
     }
     fCheckBlockIndex = GetBoolArg("-checkblockindex", chainparams.DefaultConsistencyChecks());
     fCheckpointsEnabled = GetBoolArg("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED);

@@ -1313,44 +1313,66 @@ bool CTxMemPool::TransactionWithinChainLimit(const uint256 &txid, size_t chainLi
 
 /******************************************************************************/
 
-void CPoolAggregate::UpdateTransactionsFromBlock(const std::vector <uint256> &vHashesToUpdate) {
+CTxPoolAggregate::CTxPoolAggregate(const CFeeRate& minReasonableRelayFee) 
+: stemTxPool(minReasonableRelayFee)
+{}
+
+CTxMemPool & CTxPoolAggregate::getStemTxPool() {
+    return stemTxPool;
+}
+
+void CTxPoolAggregate::UpdateTransactionsFromBlock(const std::vector <uint256> &vHashesToUpdate) {
     mempool.UpdateTransactionsFromBlock(vHashesToUpdate);
-    stempool.UpdateTransactionsFromBlock(vHashesToUpdate);
+    stemTxPool.UpdateTransactionsFromBlock(vHashesToUpdate);
 }
 
-void CPoolAggregate::AddTransactionsUpdated(unsigned int n) {
+void CTxPoolAggregate::AddTransactionsUpdated(unsigned int n) {
     mempool.AddTransactionsUpdated(n);
-    stempool.AddTransactionsUpdated(n);
+    stemTxPool.AddTransactionsUpdated(n);
 }
 
-void CPoolAggregate::removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags) {
+void CTxPoolAggregate::removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags) {
     mempool.removeForReorg(pcoins, nMemPoolHeight, flags);
-    stempool.removeForReorg(pcoins, nMemPoolHeight, flags);
+    stemTxPool.removeForReorg(pcoins, nMemPoolHeight, flags);
 }
 
-void CPoolAggregate::PrioritiseTransaction(const uint256 hash, const string strHash, double dPriorityDelta,
+void CTxPoolAggregate::PrioritiseTransaction(const uint256 hash, const string strHash, double dPriorityDelta,
                                        const CAmount &nFeeDelta) {
     mempool.PrioritiseTransaction(hash, strHash, dPriorityDelta, nFeeDelta);
-    stempool.PrioritiseTransaction(hash, strHash, dPriorityDelta, nFeeDelta);
+    stemTxPool.PrioritiseTransaction(hash, strHash, dPriorityDelta, nFeeDelta);
 }
 
-void CPoolAggregate::setSanityCheck(double dFrequency) {
+void CTxPoolAggregate::setSanityCheck(double dFrequency) {
     mempool.setSanityCheck(dFrequency);
-    stempool.setSanityCheck(dFrequency);
+    stemTxPool.setSanityCheck(dFrequency);
 }
 
-void CPoolAggregate::getTransactions(std::set<uint256>& setTxid) {
+void CTxPoolAggregate::getTransactions(std::set<uint256>& setTxid) {
     mempool.getTransactions(setTxid);
-    stempool.getTransactions(setTxid);
+    stemTxPool.getTransactions(setTxid);
 }
 
-void CPoolAggregate::check(const CCoinsViewCache *pcoins) const {
+void CTxPoolAggregate::check(const CCoinsViewCache *pcoins) const {
     mempool.check(pcoins);
-    stempool.check(pcoins);
+    stemTxPool.check(pcoins);
 }
 
-void CPoolAggregate::clear() {
+std::shared_ptr<const CTransaction> CTxPoolAggregate::get(const uint256& hash) const {
+    std::shared_ptr<const CTransaction> ptx = mempool.get(hash);
+
+    if(ptx)
+        return ptx;
+
+    return stemTxPool.get(hash);
+}
+
+void CTxPoolAggregate::clear() {
     mempool.clear();
-    stempool.clear();
+    stemTxPool.clear();
 }
 
+void CTxPoolAggregate::removeForBlock(const std::vector<CTransaction>& vtx, unsigned int nBlockHeight,
+                        std::list<CTransaction>& conflicts, bool fCurrentEstimate) {
+    mempool.removeForBlock(vtx, nBlockHeight, conflicts, fCurrentEstimate);
+    stemTxPool.removeForBlock(vtx, nBlockHeight, conflicts, fCurrentEstimate);
+}
