@@ -11,8 +11,11 @@ class Bip47Account {
     PaymentCode paymentCode;
 
     public:
+    Bip47Account() {accountId=0;}
     Bip47Account(CExtKey &coinType, int identity);
     Bip47Account(String strPaymentCode);
+
+    bool SetPaymentCodeString(String strPaymentCode);
     String getStringPaymentCode();
 
     CBitcoinAddress getNotificationAddress();

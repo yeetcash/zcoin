@@ -1,6 +1,8 @@
 #include "Bip47Account.h"
 #include "PaymentCode.h"
 
+
+
 Bip47Account::Bip47Account(CExtKey &coinType, int identity) {
     accountId = identity;
     CExtKey temp_key;
@@ -8,9 +10,15 @@ Bip47Account::Bip47Account(CExtKey &coinType, int identity) {
     this->key = temp_key.Neuter();
     paymentCode = PaymentCode(key.pubkey.begin(), (const unsigned char*)key.chaincode.begin());
 }
+
 Bip47Account::Bip47Account(String strPaymentCode) {
     accountId = 0;
-    if (!PaymentCode::createMasterPubKeyFromPaymentCode(strPaymentCode,key)) {
+    SetPaymentCodeString(strPaymentCode);
+}
+
+bool Bip47Account::SetPaymentCodeString(String strPaymentCode)
+{
+    if (!PaymentCode::createMasterPubKeyFromPaymentCode(strPaymentCode, key)) {
         throw std::runtime_error("(CBaseChainParams *parameters, String strPaymentCode).\n");
     }
 

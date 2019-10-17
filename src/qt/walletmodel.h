@@ -165,6 +165,9 @@ public:
     // Check address for validity
     bool validateAddress(const QString &address);
 
+    // @bip47 validatePaymentCode
+    bool validatePaymentCode(const QString &pCode);
+
     // Return status record for SendCoins, contains error id + information
     struct SendCoinsReturn
     {
@@ -175,9 +178,11 @@ public:
 
     // prepare transaction for getting txfee before sending coins
     SendCoinsReturn prepareTransaction(WalletModelTransaction &transaction, const CCoinControl *coinControl = NULL);
+    SendCoinsReturn preparePCodeTransaction(WalletModelTransaction &transaction, const CCoinControl *coinControl = NULL);
 
     // Send coins to a list of recipients
     SendCoinsReturn sendCoins(WalletModelTransaction &transaction);
+    SendCoinsReturn sendPCodeCoins(WalletModelTransaction &transaction);
 
     // Wallet encryption
     bool setWalletEncrypted(bool encrypted, const SecureString &passphrase);
