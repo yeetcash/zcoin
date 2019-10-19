@@ -25,7 +25,8 @@ public:
 
     std::string makeNotificationTransaction(std::string paymentCode);
     CTransaction* getSignedNotificationTransaction(CWalletTx &sendRequest, string paymentCode);
-    bool isNotificationTransaction();
+    bool isNotificationTransaction(CTransaction tx);
+    bool isToBIP47Address(CTransaction tx);
     CBitcoinAddress getAddressOfReceived(CTransaction tx);
     CBitcoinAddress getAddressOfSent(CTransaction tx);
     PaymentCode getPaymentCodeInNotificationTransaction(CTransaction tx);

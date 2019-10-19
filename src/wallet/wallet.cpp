@@ -51,6 +51,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
+#include "bip47/Bip47Wallet.h"
+
 using namespace std;
 
 CWallet *pwalletMain = NULL;
