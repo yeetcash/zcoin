@@ -57,7 +57,7 @@ Bip47ChannelAddress PaymentCode::addressAt(int idx) {
     CExtPubKey key;
     if(!createMasterPubKeyFromPaymentCode(strPaymentCode,key)){
         LogPrintf("PaymentCode::addressAt is failed idx = %d \n",idx);
-        throw std::runtime_error("Bip47ChannelAddress PaymentCode::addressAt");
+        LogPrintf("Bip47ChannelAddress PaymentCode::addressAt.\n");
     }
     return Bip47ChannelAddress(key, idx);
 }
@@ -66,7 +66,8 @@ std::vector<unsigned char> PaymentCode::getPayload() {
     std::vector<unsigned char> pcBytes;
     if(!DecodeBase58Check(strPaymentCode,pcBytes))
     {
-        throw runtime_error("PaymentCode::getPayload is failed in DecodeBase58Check");
+        LogPrintf("PaymentCode::getPayload is failed in DecodeBase58Check\n");
+        return std::vector<unsigned char>(0);
     }
      
     std::vector<unsigned char> payload(80);
@@ -84,7 +85,7 @@ std::vector<unsigned char> PaymentCode::decode() {
     std::vector<unsigned char> temp;
     if(!DecodeBase58(strPaymentCode,temp))
     {
-        throw std::runtime_error("PaymentCode::decode error");
+        LogPrintf("PaymentCode::decode error\n");
     }
     return temp ;
 }
@@ -93,7 +94,7 @@ std::vector<unsigned char> PaymentCode::decodeChecked() {
     std::vector<unsigned char> temp ;
     if(!DecodeBase58Check(strPaymentCode,temp))
     {
-        throw std::runtime_error("PaymentCode::decodeChecked error");
+        LogPrintf("PaymentCode::decodeChecked error\n");
     }
     return temp ;
 }
@@ -143,12 +144,12 @@ boolean PaymentCode::parse() {
     std::vector<unsigned char> pcBytes;
     if(!DecodeBase58Check(strPaymentCode, pcBytes)) return false ;
     if(pcBytes[0] != 0x47) {
-        throw std::runtime_error("invalid payment code version");
+        LogPrintf("invalid payment code version");
         return false;
     } else {
         Bip47_common::arraycopy(pcBytes, 3, pubkey, 0,  33);
         if(pubkey[0] != 2 && pubkey[0] != 3) {
-            throw std::runtime_error("invalid public key");
+            LogPrintf("invalid public key");
             return false;
         } else {
             Bip47_common::arraycopy(pcBytes,3+33,chain,0,32);
@@ -179,12 +180,12 @@ String PaymentCode::make(int type) {
     payment_code[0] = 0x47;
     Bip47_common::arraycopy(payload, 0, payment_code, 1, payload.size());
     
-    std::vector<unsigned char> hash2 ;
-    if(!Bip47_common::doublehash(payment_code,hash2))
-    {
-        LogPrintf("String PaymentCode::make is failed type = %d ...\n",type);
-        throw std::runtime_error("String PaymentCode::make is failed type = %d ...\n");
-    }
+    // std::vector<unsigned char> hash2 ;
+    // if(!Bip47_common::doublehash(payment_code,hash2))
+    // {
+    //     LogPrintf("String PaymentCode::make is failed type = %d ...\n",type);
+    //     LogPrintf("String PaymentCode::make is failed type = %d ...\n");
+    // }
     // std::vector<unsigned char> var7;
     // Bip47_common::copyOfRange(hash2,0,4,var7);
     // std::vector<unsigned char> payment_code_checksum(payment_code.size() + var7.size());
@@ -213,7 +214,8 @@ boolean PaymentCode::createMasterPubKeyFromBytes(std::vector<unsigned char> &pub
 
 std::vector<unsigned char> PaymentCode::vector_xor(std::vector<unsigned char> a, std::vector<unsigned char> b) {
     if(a.size() != b.size()) {
-        throw std::runtime_error("vector_xor a and b should have same size");
+        LogPrintf("vector_xor a and b should have same size");
+        return std::vector<unsigned char>(0);
     } else {
         std::vector<unsigned char> ret(a.size());
 
@@ -229,7 +231,7 @@ boolean PaymentCode::isValid() {
     std::vector<unsigned char> afe;
     if(!DecodeBase58Check(strPaymentCode,afe)) return false;
     if(afe[0] != 71) {
-        throw std::runtime_error("invalid version: " + strPaymentCode);
+        LogPrintf("invalid version: %s\n", strPaymentCode);
         return false;
     } else {
         PaymentCode testPcode(strPaymentCode);
@@ -278,10 +280,10 @@ boolean PaymentCode::createMasterPubKeyFromPaymentCode(String payment_code_str,C
     return createMasterPubKeyFromBytes(pcode.getPubKey(), pcode.getChain(), masterPubKey);
 
     // if(!DecodeBase58Check(payment_code_str,paymentCodeBytes)){
-    //     throw std::runtime_error("PaymentCode::createMasterPubKeyFromPaymentCode DecodeBase58Check is failed, payment_code_str is invalid ");
+    //     LogPrintf("PaymentCode::createMasterPubKeyFromPaymentCode DecodeBase58Check is failed, payment_code_str is invalid ");
     // }
     // if(paymentCodeBytes[0] != 0x47) {
-    //     throw std::runtime_error("invalid payment code version");
+    //     LogPrintf("invalid payment code version");
     // } else {
     //     std::vector<unsigned char> chain(32);
     //     std::vector<unsigned char> pub(33);

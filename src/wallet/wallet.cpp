@@ -968,6 +968,15 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction &tx, const CBlock *pbl
 
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
+
+        if(pbip47WalletMain->isNotificationTransaction(tx))
+        {
+            
+        }
+        else if(pbip47WalletMain->isToBIP47Address(tx))
+        {
+
+        } 
         if (fExisted || IsMine(tx) || IsFromMe(tx)) {
             CWalletTx wtx(this, tx);
 
@@ -7893,6 +7902,33 @@ bool CWallet::InitLoadWallet() {
         }
 
         walletInstance->SetBestChain(chainActive.GetLocator());
+
+        // Load Bip47Wallet
+        CKeyID masterKeyID = walletInstance->GetHDChain().masterKeyID;
+        if(!masterKeyID.IsNull())
+        {
+            CKey key;
+            if(walletInstance->GetKey(masterKeyID, key))
+            {
+                CExtKey masterKey;
+                masterKey.SetMaster(key.begin(), key.size());
+                
+                
+                // Setup Bip47 Related information.
+
+            }
+            else
+            {
+                throw std::runtime_error(std::string(__func__) + ": Cannot GetKey in LoadWallet");
+            }
+            
+        }
+        else
+        {
+            throw std::runtime_error(std::string(__func__) + ": GetHDChainMasterKeyID error");
+        }
+        
+
     } else if (mapArgs.count("-usehd")) {
         bool useHD = GetBoolArg("-usehd", DEFAULT_USE_HD_WALLET);
         if (!walletInstance->hdChain.masterKeyID.IsNull() && !useHD)

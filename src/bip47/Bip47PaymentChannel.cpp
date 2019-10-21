@@ -63,7 +63,7 @@ Bip47Address* Bip47PaymentChannel::getIncomingAddress(String address) {
             return &bip47Address;
         }
     }
-    return null;
+    return nullptr;
 }
 
 void Bip47PaymentChannel::addNewIncomingAddress(String newAddress, int nextIndex) {

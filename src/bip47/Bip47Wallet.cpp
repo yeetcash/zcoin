@@ -343,8 +343,7 @@ bool Bip47Wallet::isNotificationTransaction(CTransaction tx)
 
 bool Bip47Wallet::isToBIP47Address(CTransaction tx)
 {
-    
-    return true;
+    return false;
 }
 
 CBitcoinAddress Bip47Wallet::getAddressOfReceived(CTransaction tx) 

@@ -6,7 +6,6 @@ unsigned char* Bip47_common::arraycopy(const std::vector<unsigned char> &source_
     if(source_arr.size() < sourcePos + len)
     {
         throw std::runtime_error("arraycopy error, source_arr has invalid size");
-        return null;
     }
     return (unsigned char*)memcpy(dest_arr + destPos,source_arr.data() + sourcePos , len);
 }
@@ -14,7 +13,6 @@ unsigned char* Bip47_common::arraycopy(const unsigned char *source_arr,int sourc
     if(dest_arr.size() < destPos + len)
     {
         throw std::runtime_error("arraycopy error, dest_arr has invalid size");
-        return null;
     }
     return (unsigned char*)memcpy(dest_arr.data() + destPos, source_arr + sourcePos , len);
 }
@@ -22,12 +20,10 @@ unsigned char* Bip47_common::arraycopy(const std::vector<unsigned char> &source_
     if(dest_arr.size() < destPos + len)
     {
         throw std::runtime_error("arraycopy error, dest_arr has invalid size");
-        return null;
     }
     if(source_arr.size() < sourcePos + len)
     {
         throw std::runtime_error("arraycopy error, source_arr has invalid size");
-        return null;
     }
     return (unsigned char*)memcpy(dest_arr.data() + destPos, source_arr.data() + sourcePos , len);
 }
