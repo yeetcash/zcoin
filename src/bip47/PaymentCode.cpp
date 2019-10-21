@@ -140,7 +140,7 @@ std::vector<unsigned char> PaymentCode::blind(std::vector<unsigned char> payload
     Bip47_common::arraycopy(temp2, 0, ret, 35, 32);
     return ret;
 }
-boolean PaymentCode::parse() {
+bool PaymentCode::parse() {
     std::vector<unsigned char> pcBytes;
     if(!DecodeBase58Check(strPaymentCode, pcBytes)) return false ;
     if(pcBytes[0] != 0x47) {
@@ -196,7 +196,7 @@ String PaymentCode::make(int type) {
     return EncodeBase58Check(payment_code);
 }
 
-boolean PaymentCode::createMasterPubKeyFromBytes(std::vector<unsigned char> &pub, std::vector<unsigned char> &chain, CExtPubKey &masterPubKey) {
+bool PaymentCode::createMasterPubKeyFromBytes(std::vector<unsigned char> &pub, std::vector<unsigned char> &chain, CExtPubKey &masterPubKey) {
     try{
         
         masterPubKey.nDepth = 3;
@@ -227,7 +227,7 @@ std::vector<unsigned char> PaymentCode::vector_xor(std::vector<unsigned char> a,
     }
 }
 
-boolean PaymentCode::isValid() {
+bool PaymentCode::isValid() {
     std::vector<unsigned char> afe;
     if(!DecodeBase58Check(strPaymentCode,afe)) return false;
     if(afe[0] != 71) {
@@ -274,7 +274,7 @@ boolean PaymentCode::isValid() {
     return true;
 }
 
-boolean PaymentCode::createMasterPubKeyFromPaymentCode(String payment_code_str,CExtPubKey &masterPubKey) {
+bool PaymentCode::createMasterPubKeyFromPaymentCode(String payment_code_str,CExtPubKey &masterPubKey) {
     
     PaymentCode pcode(payment_code_str);
     return createMasterPubKeyFromBytes(pcode.getPubKey(), pcode.getChain(), masterPubKey);

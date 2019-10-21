@@ -24,12 +24,12 @@ class SecretPoint {
 
     std::vector<unsigned char> ECDHSecretAsBytes() ;
 
-    boolean isShared(SecretPoint secret) ;
+    bool isShared(SecretPoint secret) ;
 
     private:
     std::vector<unsigned char> ECDHSecret() ;
 
-    boolean equals(SecretPoint &v_secret);
+    bool equals(SecretPoint &v_secret);
 
     void loadPublicKey(std::vector<unsigned char> data) ;
     void loadPrivateKey(std::vector<unsigned char> data) ;

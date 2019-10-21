@@ -1216,7 +1216,7 @@ public:
      * 
      * */
 private:
-    vector<Bip47Account> m_Bip47Accounts;
+    std::vector<Bip47Account> m_Bip47Accounts;
     std::map<string, Bip47PaymentChannel> m_Bip47channels;
 public:
     

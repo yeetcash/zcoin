@@ -37,7 +37,7 @@ unsigned char* Bip47_common::copyOfRange(const std::vector<unsigned char> &origi
     arraycopy(original, from, result, 0, len);
     return result.data();
 }
-boolean Bip47_common::doublehash(const std::vector<unsigned char> &input,std::vector<unsigned char> &result)
+bool Bip47_common::doublehash(const std::vector<unsigned char> &input,std::vector<unsigned char> &result)
 {
     try{
         SHA256_CTX shaCtx;
@@ -52,7 +52,7 @@ boolean Bip47_common::doublehash(const std::vector<unsigned char> &input,std::ve
     }
     catch(std::exception &e)
     {
-        printf("boolean Bip47_common::doublehash is failed ...\n");
+        printf("bool Bip47_common::doublehash is failed ...\n");
         return false;
     }
     

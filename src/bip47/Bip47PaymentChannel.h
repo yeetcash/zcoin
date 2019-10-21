@@ -34,7 +34,7 @@ class Bip47PaymentChannel {
         String getLabel() ;
         void setLabel(String l) ;
         std::list<String>& getOutgoingAddresses() ;
-        boolean isNotificationTransactionSent() ;
+        bool isNotificationTransactionSent() ;
         void setStatusSent() ;
         int getCurrentOutgoingIndex() ;
         void incrementOutgoingIndex() ;

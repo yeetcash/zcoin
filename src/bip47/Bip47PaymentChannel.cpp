@@ -84,7 +84,7 @@ std::list<String>& Bip47PaymentChannel::getOutgoingAddresses() {
     return outgoingAddresses;
 }
 
-boolean Bip47PaymentChannel::isNotificationTransactionSent() {
+bool Bip47PaymentChannel::isNotificationTransactionSent() {
     return status == STATUS_SENT_CFM;
 }
 

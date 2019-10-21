@@ -30,7 +30,7 @@ std::vector<unsigned char> SecretPoint::ECDHSecretAsBytes(){
     return ECDHSecret();
 }
 
-boolean SecretPoint::isShared(SecretPoint secret) {
+bool SecretPoint::isShared(SecretPoint secret) {
     return equals(secret);
 }
 
@@ -46,7 +46,7 @@ std::vector<unsigned char> SecretPoint::ECDHSecret() {
     return hash;
 }
 
-boolean SecretPoint::equals(SecretPoint &v_secret){
+bool SecretPoint::equals(SecretPoint &v_secret){
     String str1 = HexStr(ECDHSecretAsBytes());
     String str2 = HexStr(v_secret.ECDHSecretAsBytes());
     if(str1.compare(str2)==0)
