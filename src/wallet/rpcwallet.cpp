@@ -4125,6 +4125,52 @@ UniValue getNotificationAddressFromPaymentCode(const UniValue& params, bool fHel
     return bip47Account.getNotificationAddress().ToString();
 }
 
+UniValue getPaymentCodeFromNotificationTx(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+                "getPaymentCodeFromNotificationTx <txid of notification tx>\n" 
+                "return paymentcode of recieved"
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    EnsureWalletIsUnlocked();
+
+    uint256 hash;
+    hash.SetHex(params[0].get_str());
+
+    if (!pwalletMain->mapWallet.count(hash))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id");
+    const CWalletTx& wtx = pwalletMain->mapWallet[hash];
+    CTransaction tx = static_cast<CTransaction>(wtx);
+
+    if(pwalletMain->isNotificationTransaction(tx))
+    {
+        PaymentCode pcode = pwalletMain->getPaymentCodeInNotificationTransaction(tx);
+        if (pcode.isValid())
+        {
+            return pcode.toString();
+        }
+        else
+        {
+            return "Invalid Result";
+        }
+    }
+    else 
+    {
+        throw runtime_error("getPaymentCodeFromNotificationTx <txid of notification tx>\n" 
+                        "Txid is not for notification Transaction"
+                );
+    }
+    
+    
+    return wtx.GetHash().GetHex();
+}
+
 
 
 UniValue sendtopcode(const UniValue& params, bool fHelp)
@@ -4367,6 +4413,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "sendtopcode",            &sendtopcode,            false },
     { "wallet",             "listreceivedbypcode",    &listreceivedbypcode,    false },
     { "wallet",             "getreceivedbypcode",     &getreceivedbypcode,     false },
+    { "wallet",             "getPaymentCodeFromNotificationTx",     &getPaymentCodeFromNotificationTx,     false },
 };
 
 void RegisterWalletRPCCommands(CRPCTable &tableRPC)

@@ -94,7 +94,7 @@ PaymentcodePage::~PaymentcodePage()
 }
 
 void PaymentcodePage::copy_button_clicked() {
-    
+    GUIUtil::setClipboard(ui->paymentcodeLabel->toPlainText());
 }
 
 void PaymentcodePage::setClientModel(ClientModel *model)

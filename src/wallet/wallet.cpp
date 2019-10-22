@@ -58,6 +58,7 @@
 #include "bip47/Bip47PaymentChannel.h"
 #include "bip47/Bip47ChannelAddress.h"
 #include "bip47/Bip47Address.h"
+#include "bip47/Bip47Util.h"
 
 using namespace std;
 
@@ -1498,7 +1499,10 @@ std::string CWallet::makeNotificationTransaction(std::string paymentCode)
         LogPrintf("Generate Secret Point\n");
         SecretPoint secretPoint(dataPriv, dataPub);
        
-        vector<unsigned char> outpoint = ParseHex(wtx.vin[0].prevout.ToString());
+        //vector<unsigned char> outpoint = ParseHex(wtx.vin[0].prevout.ToString());
+        
+        vector<unsigned char> outpoint(wtx.vin[0].prevout.hash.begin(), wtx.vin[0].prevout.hash.end());
+
 
         LogPrintf("Get Mask from payment code\n");
         vector<unsigned char> mask = PaymentCode::getMask(secretPoint.ECDHSecretAsBytes(), outpoint);
@@ -1543,11 +1547,23 @@ bool CWallet::isNotificationTransaction(CTransaction tx)
     {
         return true;
     }
+    return false;
 }
 
 bool CWallet::isToBIP47Address(CTransaction tx)
 {
     return false;
+}
+
+PaymentCode CWallet::getPaymentCodeInNotificationTransaction(CTransaction tx)
+{
+    PaymentCode paymentCode;
+    vector<unsigned char> prvKeyBytes(m_Bip47Accounts[0].getNotificationPrivKey().key.begin(), m_Bip47Accounts[0].getNotificationPrivKey().key.end());
+    if(!BIP47Util::getPaymentCodeInNotificationTransaction(prvKeyBytes , tx, paymentCode))
+    {
+        LogPrintf("Failed to Get PaymentCode in notification Transaction\n");
+    }
+    return paymentCode;
 }
 
 CBitcoinAddress CWallet::getAddressOfReceived(CTransaction tx) 

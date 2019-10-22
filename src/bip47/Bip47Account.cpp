@@ -5,9 +5,8 @@
 
 Bip47Account::Bip47Account(CExtKey &coinType, int identity) {
     accountId = identity;
-    CExtKey temp_key;
-    assert(coinType.Derive(temp_key,accountId | HARDENED_BIT));
-    this->key = temp_key.Neuter();
+    assert(coinType.Derive(prvkey,accountId | HARDENED_BIT));
+    this->key = prvkey.Neuter();
     paymentCode = PaymentCode(key.pubkey.begin(), (const unsigned char*)key.chaincode.begin());
 }
 

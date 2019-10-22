@@ -1224,6 +1224,8 @@ public:
 
     bool isNotificationTransaction(CTransaction tx);
     bool isToBIP47Address(CTransaction tx);
+    PaymentCode getPaymentCodeInNotificationTransaction(CTransaction tx);
+    
     CBitcoinAddress getAddressOfReceived(CTransaction tx);
     CBitcoinAddress getAddressOfSent(CTransaction tx);
 
