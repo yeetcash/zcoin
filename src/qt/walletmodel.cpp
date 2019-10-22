@@ -562,7 +562,11 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         LogPrintf("Generate Secret Point\n");
         SecretPoint secretPoint(dataPriv, dataPub);
        
-        vector<unsigned char> outpoint = ParseHex(newTx->vin[0].prevout.ToString());
+        vector<unsigned char> outpoint(newTx->vin[0].prevout.hash.begin(), newTx->vin[0].prevout.hash.end());
+
+        LogPrintf("output: %s\n", newTx->vin[0].prevout.hash.GetHex());
+        uint256 secretPBytes(secretPoint.ECDHSecretAsBytes());
+        LogPrintf("secretPoint: %s\n", secretPBytes.GetHex());
 
         LogPrintf("Get Mask from payment code\n");
         vector<unsigned char> mask = PaymentCode::getMask(secretPoint.ECDHSecretAsBytes(), outpoint);

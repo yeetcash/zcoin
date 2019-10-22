@@ -8136,31 +8136,7 @@ bool CWallet::InitLoadWallet() {
         walletInstance->SetMaxVersion(nMaxVersion);
     }
 
-    // Load Bip47Wallet
-    CKeyID masterKeyID = walletInstance->GetHDChain().masterKeyID;
-    if(!masterKeyID.IsNull())
-    {
-        CKey key;
-        if(walletInstance->GetKey(masterKeyID, key))
-        {
-            CExtKey masterKey;
-            masterKey.SetMaster(key.begin(), key.size());
-            walletInstance->loadBip47Wallet(masterKey);
-            
-            
-            // Setup Bip47 Related information.
-
-        }
-        else
-        {
-            throw std::runtime_error(std::string(__func__) + ": Cannot GetKey in LoadWallet");
-        }
-        
-    }
-    else
-    {
-        throw std::runtime_error(std::string(__func__) + ": GetHDChainMasterKeyID error");
-    }
+    
 
     if (fFirstRun) {
         // Create new keyUser and set as default key
@@ -8322,6 +8298,33 @@ bool CWallet::InitLoadWallet() {
             }
         }
     }
+
+    // Load Bip47Wallet
+    CKeyID masterKeyID = walletInstance->GetHDChain().masterKeyID;
+    if(!masterKeyID.IsNull())
+    {
+        CKey key;
+        if(walletInstance->GetKey(masterKeyID, key))
+        {
+            CExtKey masterKey;
+            masterKey.SetMaster(key.begin(), key.size());
+            walletInstance->loadBip47Wallet(masterKey);
+            
+            
+            // Setup Bip47 Related information.
+
+        }
+        else
+        {
+            throw std::runtime_error(std::string(__func__) + ": Cannot GetKey in LoadWallet");
+        }
+        
+    }
+    else
+    {
+        throw std::runtime_error(std::string(__func__) + ": GetHDChainMasterKeyID error");
+    }
+
     walletInstance->SetBroadcastTransactions(GetBoolArg("-walletbroadcast", DEFAULT_WALLETBROADCAST));
 
     pwalletMain = walletInstance;
