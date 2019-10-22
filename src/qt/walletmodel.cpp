@@ -26,7 +26,6 @@
 #include "sigma/coin.h"
 
 #include "bip47/PaymentCode.h"
-#include "bip47/Bip47Wallet.h"
 #include "bip47/Bip47Account.h"
 #include "bip47/SecretPoint.h"
 
@@ -569,7 +568,7 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         vector<unsigned char> mask = PaymentCode::getMask(secretPoint.ECDHSecretAsBytes(), outpoint);
 
         LogPrintf("Get op_return bytes via blind\n");
-        vector<unsigned char> op_return = PaymentCode::blind(pbip47WalletMain->getAccount(0).getPaymentCode().getPayload(), mask);
+        vector<unsigned char> op_return = PaymentCode::blind(pwalletMain->getBip47Account(0).getPaymentCode().getPayload(), mask);
 
         CScript op_returnScriptPubKey = CScript() << OP_RETURN << op_return;
         CRecipient pcodeBlind = {op_returnScriptPubKey, 0, false};

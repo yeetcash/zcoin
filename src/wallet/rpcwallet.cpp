@@ -26,7 +26,6 @@
 #include "zerocoin.h"
 #include "walletexcept.h"
 #include "bip47/PaymentCode.h"
-#include "bip47/Bip47Wallet.h"
 
 #include <znode-payments.h>
 
@@ -4084,7 +4083,7 @@ UniValue getMyPaymentCode(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     
-    return pbip47WalletMain->getPaymentCode();
+    return pwalletMain->getPaymentCode();
 }
 
 UniValue getMyNotificationAddress(const UniValue& params, bool fHelp)
@@ -4103,7 +4102,7 @@ UniValue getMyNotificationAddress(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     
-    return pbip47WalletMain->getNotifiactionAddress();
+    return pwalletMain->getNotifiactionAddress();
 }
 
 UniValue getNotificationAddressFromPaymentCode(const UniValue& params, bool fHelp)
@@ -4160,7 +4159,7 @@ UniValue sendtopcode(const UniValue& params, bool fHelp)
 
 
     EnsureWalletIsUnlocked();
-    return pbip47WalletMain->makeNotificationTransaction(paymentCode.toString());
+    return pwalletMain->makeNotificationTransaction(paymentCode.toString());
     
     // Wallet comments
     // CWalletTx wtx;
