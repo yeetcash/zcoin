@@ -85,6 +85,11 @@ bool BIP47Util::getPaymentCodeInNotificationTransaction(vector<unsigned char> pr
     vector<unsigned char> outpoint(wtx.vin[0].prevout.hash.begin(), wtx.vin[0].prevout.hash.end());
 
     SecretPoint secretPoint(privKeyBytes, pubKeyBytes);
+
+    LogPrintf("output: %s\n", wtx.vin[0].prevout.hash.GetHex());
+    uint256 secretPBytes(secretPoint.ECDHSecretAsBytes());
+    LogPrintf("secretPoint: %s\n", secretPBytes.GetHex());
+
     vector<unsigned char> mask = PaymentCode::getMask(secretPoint.ECDHSecretAsBytes(), outpoint);
     vector<unsigned char> payload = PaymentCode::blind(op_data, mask);
     PaymentCode pcode(payload.data(), payload.size());

@@ -1503,6 +1503,10 @@ std::string CWallet::makeNotificationTransaction(std::string paymentCode)
         
         vector<unsigned char> outpoint(wtx.vin[0].prevout.hash.begin(), wtx.vin[0].prevout.hash.end());
 
+        LogPrintf("output: %s\n", wtx.vin[0].prevout.hash.GetHex());
+        uint256 secretPBytes(secretPoint.ECDHSecretAsBytes());
+        LogPrintf("secretPoint: %s\n", secretPBytes.GetHex());
+
 
         LogPrintf("Get Mask from payment code\n");
         vector<unsigned char> mask = PaymentCode::getMask(secretPoint.ECDHSecretAsBytes(), outpoint);
