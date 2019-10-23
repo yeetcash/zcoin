@@ -1590,7 +1590,10 @@ bool CWallet::isToBIP47Address(CTransaction tx)
 PaymentCode CWallet::getPaymentCodeInNotificationTransaction(CTransaction tx)
 {
     PaymentCode paymentCode;
-    vector<unsigned char> prvKeyBytes(m_Bip47Accounts[0].getNotificationPrivKey().key.begin(), m_Bip47Accounts[0].getNotificationPrivKey().key.end());
+    CKey notificationPKey = m_Bip47Accounts[0].getNotificationPrivKey().key;
+    vector<unsigned char> prvKeyBytes(notificationPKey.begin(), notificationPKey.end());
+//     m_Bip47Accounts[0].getNotificationPrivKey().key.IsValid
+    LogPrintf("The privkey Size is %d\n", prvKeyBytes.size());
     if(!BIP47Util::getPaymentCodeInNotificationTransaction(prvKeyBytes , tx, paymentCode))
     {
         LogPrintf("Failed to Get PaymentCode in notification Transaction\n");

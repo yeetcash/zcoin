@@ -120,6 +120,7 @@ CExtPubKey Bip47Account::getNotificationKey() {
 CExtKey Bip47Account::getNotificationPrivKey() {
        
     CExtKey result;
+    
     prvkey.Derive(result,0);
     CExtPubKey extpubkey = getNotificationKey();
     if(result.key.VerifyPubKey(extpubkey.pubkey))
