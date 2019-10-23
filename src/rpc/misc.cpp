@@ -16,7 +16,6 @@
 #include "utilstrencodings.h"
 #include "bip47/PaymentCode.h"
 #include "bip47/Bip47Account.h"
-#include "bip47/Bip47Wallet.h"
 #ifdef ENABLE_WALLET
 #include "znode-sync.h"
 #include "wallet/wallet.h"
@@ -1222,7 +1221,7 @@ UniValue validatepcode(const UniValue& params, bool fHelp)
     PaymentCode paymentCode(strPcode);
     Bip47Account bip47Account(strPcode);
     bool isValid = paymentCode.isValid();
-    bool walletBip47AccountValid = pbip47WalletMain->getAccount(0).isValid();
+    bool walletBip47AccountValid = pwalletMain->getBip47Account(0).isValid();
 
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("isvalid", isValid));

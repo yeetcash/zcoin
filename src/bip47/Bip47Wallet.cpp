@@ -95,10 +95,6 @@ bool Bip47Wallet::savePaymentCode(PaymentCode paymentCode)
     }
 }
 
-Bip47Account Bip47Wallet::getAccount(int i)
-{
-    return mBip47Accounts[i];
-}
 
 CBitcoinAddress Bip47Wallet::getAddressOfKey(CExtPubKey pkey)
 {
@@ -231,212 +227,20 @@ CAmount Bip47Wallet::getValueSentToMe(CTransaction tx)
     return 0;
 }
 
-std::string Bip47Wallet::makeNotificationTransaction(std::string paymentCode) 
-{
-    Bip47Account toBip47Account(paymentCode);
-    CAmount ntValue = CENT;
-    CBitcoinAddress ntAddress = toBip47Account.getNotificationAddress();
-    LogPrintf("Bip47Wallet getNotificationAddress: %s\n", ntAddress.ToString().c_str());
-
-    // Wallet comments
-    CWalletTx wtx;
-
-    wtx.mapValue["comment"] = "notification_transaction";
-
-
-    CScript scriptPubKey = GetScriptForDestination(ntAddress.Get());
-    // Create and send the transaction
-    CReserveKey reservekey(pwalletMain);
-    LogPrintf("Bip47Wallet get reservekey\n");
-    CAmount nFeeRequired;
-    std::string strError;
-    vector<CRecipient> vecSend;
-    int nChangePosRet = -1;
-    CRecipient recipient = {scriptPubKey, ntValue, false};
-    vecSend.push_back(recipient);
-    try
-    {
-        LogPrintf("Make general transaction template to notification address\n");
-        if(!pwalletMain->CreateTransaction(vecSend, wtx, reservekey, nFeeRequired, nChangePosRet, strError)) {
-            LogPrintf("Bip47Wallet Error CreateTransaction 1 %s\n", strError);
-            throw std::runtime_error(std::string("Bip47Wallet Error CreateTransaction 1 ") + strError );
-        }
-
-        if ( wtx.vin.size() == 0 ) {
-            LogPrintf("Bip47Wallet Error CreateTransaction wtx.vin.size = 0\n");
-            throw std::runtime_error("Bip47Wallet Error CreateTransaction wtx.vin.size = 0\n");
-        }
-
-        CPubKey designatedPubKey;
-        if(!reservekey.GetReservedKey(designatedPubKey))
-        {
-            LogPrintf("Bip47Wallet Error while get designated Pubkey from reserved key\n");
-            throw std::runtime_error("Bip47Wallet Error while get designated Pubkey from reserved key\n");
-        }
-        CKey privKey;
-        pwalletMain->GetKey(designatedPubKey.GetID(), privKey);
-        
-        CPubKey pubkey = toBip47Account.getNotificationKey().pubkey;
-        vector<unsigned char> dataPriv(privKey.size());
-        vector<unsigned char> dataPub(pubkey.size());
-
-        Bip47_common::arraycopy(privKey.begin(), 0, dataPriv, 0, privKey.size());
-        Bip47_common::arraycopy(pubkey.begin(), 0, dataPub, 0, pubkey.size());
-        
-        LogPrintf("Generate Secret Point\n");
-        SecretPoint secretPoint(dataPriv, dataPub);
-       
-        vector<unsigned char> outpoint = ParseHex(wtx.vin[0].prevout.ToString());
-
-        LogPrintf("Get Mask from payment code\n");
-        vector<unsigned char> mask = PaymentCode::getMask(secretPoint.ECDHSecretAsBytes(), outpoint);
-
-        LogPrintf("Get op_return bytes via blind\n");
-        vector<unsigned char> op_return = PaymentCode::blind(mBip47Accounts[0].getPaymentCode().getPayload(), mask);
-
-        CScript op_returnScriptPubKey = CScript() << OP_RETURN << op_return;
-        CRecipient pcodeBlind = {op_returnScriptPubKey, 0, false};
-        // CTxOut txOut(0, op_returnScriptPubKey);
-        LogPrintf("Add Blind Code to vecSend\n");
-        // wtx.vout.push_back(txOut);
-        vecSend.push_back(pcodeBlind);
-
-        if(!pwalletMain->CreateTransaction(vecSend, wtx, reservekey, nFeeRequired, nChangePosRet, strError)) {
-            LogPrintf("Bip47Wallet Error CreateTransaction 2\n");
-            throw std::runtime_error(std::string("Bip47Wallet:error ").append(strError));
-        }
-
-        if(!pwalletMain->CommitTransaction(wtx, reservekey)) {
-            LogPrintf("Bip47Wallet Error CommitTransaction\n");
-            throw std::runtime_error(std::string("Bip47Wallet:error ").append(strError));
-        }
-        return wtx.GetHash().GetHex();
-        
-    }
-    catch(const std::exception& e)
-    {
-        LogPrintf("Bip47Wallet:error %s\n", e.what());
-        throw std::runtime_error(std::string("Bip47Wallet:error ").append(e.what()));
-    }
-    
-    
-}
 
 CTransaction* Bip47Wallet::getSignedNotificationTransaction(CWalletTx &sendRequest, string paymentCode) {
     CommitTransaction(sendRequest);
     return (CTransaction*)&sendRequest;
 }
 
-bool Bip47Wallet::isNotificationTransaction(CTransaction tx)
-{
-    if (!tx.IsPaymentCode())
-    {
-        return false;
-    }
-    CBitcoinAddress addr = getAddressOfReceived(tx);
-    if (getNotifiactionAddress().compare(addr.ToString()) == 0)
-    {
-        return true;
-    }
-    
-}
 
 bool Bip47Wallet::isToBIP47Address(CTransaction tx)
 {
-    
-    return true;
+    return false;
 }
 
-CBitcoinAddress Bip47Wallet::getAddressOfReceived(CTransaction tx) 
-{
-    isminefilter filter = ISMINE_ALL;
-    for (int i = 0; i < tx.vout.size(); i++) {
-        try
-        {
-            if(tx.vout[i].scriptPubKey.IsPayToPublicKeyHash()) {
-                CTxDestination address;
-                if(ExtractDestination(tx.vout[i].scriptPubKey, address)) {
-                    isminefilter mine = ::IsMine(*this, address);
-                    if(mine & ISMINE_ALL) {
-                        return CBitcoinAddress(address);
-                    }
-                }
-            }
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << e.what() << '\n';
-        }
-        
-    }
-    return CBitcoinAddress();
-}
 
-CBitcoinAddress Bip47Wallet::getAddressOfSent(CTransaction tx) {
-    isminefilter filter = ISMINE_ALL;
-    for (int i = 0; i < tx.vout.size(); i++) {
-        try
-        {
-            if(tx.vout[i].scriptPubKey.IsPayToPublicKeyHash()) {
-                CTxDestination address;
-                if(ExtractDestination(tx.vout[i].scriptPubKey, address)) {
-                    isminefilter mine = ::IsMine(*this, address);
-                    if(!(mine & ISMINE_ALL)) {
-                        return CBitcoinAddress(address);
-                    }
-                }
-            }
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << e.what() << '\n';
-        }
-        
-    }
-    return CBitcoinAddress();
-}
 
-void Bip47Wallet::deriveAccount(vector<unsigned char> hd_seed) 
-{
-    CExtKey masterKey;             //bip47 master key
-    CExtKey purposeKey;            //key at m/47'
-    CExtKey coinTypeKey;           //key at m/47'/<1/136>' (Testnet or Zcoin Coin Type respectively, according to SLIP-0047)
-    // CExtKey identityKey;           //key identity
-    // CExtKey childKey;              // index
 
-    masterKey.SetMaster(&hd_seed[0], hd_seed.size());
-    masterKey.Derive(purposeKey, BIP47_INDEX | BIP32_HARDENED_KEY_LIMIT);
-    purposeKey.Derive(coinTypeKey, 0 | BIP32_HARDENED_KEY_LIMIT);
-    // coinTypeKey.Derive(identityKey, 0 | BIP32_HARDENED_KEY_LIMIT);
-    Bip47Account bip47Account(coinTypeKey, 0);
 
-    mBip47Accounts.clear();
-    mBip47Accounts.push_back(bip47Account);
-}
-
-string Bip47Wallet::getPaymentCode()
-{
-    return getAccount(0).getStringPaymentCode();
-}
-std::string  Bip47Wallet::getNotifiactionAddress()
-{
-    return getAccount(0).getNotificationAddress().ToString();
-}
-
-void Bip47Wallet::deriveAccount(CExtKey masterKey) 
-{
-    // CExtKey masterKey;             //bip47 master key
-    CExtKey purposeKey;            //key at m/47'
-    CExtKey coinTypeKey;           //key at m/47'/<1/136>' (Testnet or Zcoin Coin Type respectively, according to SLIP-0047)
-    // CExtKey identityKey;           //key identity
-    // CExtKey childKey;              // index
-
-    masterKey.Derive(purposeKey, BIP47_INDEX | BIP32_HARDENED_KEY_LIMIT);
-    purposeKey.Derive(coinTypeKey, 0 | BIP32_HARDENED_KEY_LIMIT);
-    // coinTypeKey.Derive(identityKey, 0 | BIP32_HARDENED_KEY_LIMIT);
-    Bip47Account bip47Account(coinTypeKey, 0);
-
-    mBip47Accounts.clear();
-    mBip47Accounts.push_back(bip47Account);
-}
 

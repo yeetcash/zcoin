@@ -26,7 +26,7 @@
 #include "zerocoin.h"
 #include "walletexcept.h"
 #include "bip47/PaymentCode.h"
-#include "bip47/Bip47Wallet.h"
+#include "bip47/SecretPoint.h"
 
 #include <znode-payments.h>
 
@@ -4084,7 +4084,7 @@ UniValue getMyPaymentCode(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     
-    return pbip47WalletMain->getPaymentCode();
+    return pwalletMain->getPaymentCode();
 }
 
 UniValue getMyNotificationAddress(const UniValue& params, bool fHelp)
@@ -4103,7 +4103,7 @@ UniValue getMyNotificationAddress(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     
-    return pbip47WalletMain->getNotifiactionAddress();
+    return pwalletMain->getNotifiactionAddress();
 }
 
 UniValue getNotificationAddressFromPaymentCode(const UniValue& params, bool fHelp)
@@ -4124,6 +4124,70 @@ UniValue getNotificationAddressFromPaymentCode(const UniValue& params, bool fHel
     Bip47Account bip47Account(params[0].get_str());
 
     return bip47Account.getNotificationAddress().ToString();
+}
+
+UniValue getPaymentCodeFromNotificationTx(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+                "getPaymentCodeFromNotificationTx <txid of notification tx>\n" 
+                "return paymentcode of recieved"
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    EnsureWalletIsUnlocked();
+
+    uint256 hash;
+    hash.SetHex(params[0].get_str());
+
+    if (!pwalletMain->mapWallet.count(hash))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id");
+    const CWalletTx& wtx = pwalletMain->mapWallet[hash];
+    CTransaction tx = static_cast<CTransaction>(wtx);
+
+    if(pwalletMain->isNotificationTransaction(tx))
+    {
+        PaymentCode pcode = pwalletMain->getPaymentCodeInNotificationTransaction(tx);
+        if (pcode.isValid())
+        {
+            return pcode.toString();
+        }
+        else
+        {
+            return "Invalid Result";
+        }
+    }
+    else 
+    {
+        throw runtime_error("getPaymentCodeFromNotificationTx <txid of notification tx>\n" 
+                        "Txid is not for notification Transaction"
+                );
+    }
+    
+    
+    return wtx.GetHash().GetHex();
+}
+
+UniValue SecretPointCheck(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    
+    if(SecretPoint::SelfTest(pwalletMain))
+    {
+        return "true";
+    }
+    else
+    {
+        return "false";
+    }
+    
 }
 
 
@@ -4160,7 +4224,7 @@ UniValue sendtopcode(const UniValue& params, bool fHelp)
 
 
     EnsureWalletIsUnlocked();
-    return pbip47WalletMain->makeNotificationTransaction(paymentCode.toString());
+    return pwalletMain->makeNotificationTransaction(paymentCode.toString());
     
     // Wallet comments
     // CWalletTx wtx;
@@ -4368,6 +4432,8 @@ static const CRPCCommand commands[] =
     { "wallet",             "sendtopcode",            &sendtopcode,            false },
     { "wallet",             "listreceivedbypcode",    &listreceivedbypcode,    false },
     { "wallet",             "getreceivedbypcode",     &getreceivedbypcode,     false },
+    { "wallet",             "getPaymentCodeFromNotificationTx",     &getPaymentCodeFromNotificationTx,     false },
+    { "wallet",             "SecretPointCheck",     &SecretPointCheck,     false },
 };
 
 void RegisterWalletRPCCommands(CRPCTable &tableRPC)

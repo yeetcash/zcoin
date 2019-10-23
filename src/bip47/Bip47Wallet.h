@@ -10,7 +10,7 @@ class PaymentCode;
 
 extern Bip47Wallet* pbip47WalletMain;
 
-class Bip47Wallet :public CWallet
+class Bip47Wallet
 {
 public:
     Bip47Wallet();
@@ -25,13 +25,12 @@ public:
 
     std::string makeNotificationTransaction(std::string paymentCode);
     CTransaction* getSignedNotificationTransaction(CWalletTx &sendRequest, string paymentCode);
-    bool isNotificationTransaction(CTransaction tx);
+
     bool isToBIP47Address(CTransaction tx);
-    CBitcoinAddress getAddressOfReceived(CTransaction tx);
-    CBitcoinAddress getAddressOfSent(CTransaction tx);
+
+    
     PaymentCode getPaymentCodeInNotificationTransaction(CTransaction tx);
     bool savePaymentCode(PaymentCode paymentCode);
-    Bip47Account getAccount(int i);
     CBitcoinAddress getAddressOfKey(CExtPubKey pkey);
     bool generateNewBip47IncomingAddress(std::string strAddress);
     Bip47PaymentChannel getBip47PaymentChannelForAddress(std::string strAddres);
@@ -40,16 +39,6 @@ public:
     Bip47PaymentChannel getBip47PaymentChannelForPaymentCode(std::string paymentCode);
     CAmount getValueOfTransaction(CTransaction tx);
     CAmount getValueSentToMe(CTransaction tx);
-
-
-    string getPaymentCode();
-    string getNotifiactionAddress();
-
-
-
-
-    void deriveAccount(vector<unsigned char> hd_seed);
-    void deriveAccount(CExtKey masterKey);
 
     
 

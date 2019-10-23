@@ -23,10 +23,10 @@ class PaymentCode {
     PaymentCode() ;
     PaymentCode(String payment_code) ;
     PaymentCode(unsigned char* payload, int length) ;
-
-    PaymentCode(unsigned char v_pubkey[33], unsigned char v_chain[32]) ;
     PaymentCode(std::vector<unsigned char> &v_pubkey, std::vector<unsigned char> &v_chain) ;
+    PaymentCode(unsigned char* v_pubkey, unsigned char* v_chain) ;
     PaymentCode(const unsigned char* v_pubkey,  const unsigned char *v_chain) ;
+    
     Bip47ChannelAddress notificationAddress();
 
     Bip47ChannelAddress addressAt(int idx) ;
@@ -47,18 +47,18 @@ class PaymentCode {
     static std::vector<unsigned char> blind(std::vector<unsigned char> payload, std::vector<unsigned char> mask) ;
 
     private:
-    boolean parse() ;
+    bool parse() ;
 
     String makeV1() ;
 
     String makeV2() ;
 
     String make(int type) ;
-    static boolean createMasterPubKeyFromBytes(std::vector<unsigned char> &pub, std::vector<unsigned char> &chain,CExtPubKey &masterPubKey) ;
+    static bool createMasterPubKeyFromBytes(std::vector<unsigned char> &pub, std::vector<unsigned char> &chain,CExtPubKey &masterPubKey) ;
     static std::vector<unsigned char> vector_xor(std::vector<unsigned char> a, std::vector<unsigned char> b) ;
     public:
-    boolean isValid() ;
-    static boolean createMasterPubKeyFromPaymentCode(String payment_code_str,CExtPubKey &masterPubKey) ;
+    bool isValid() ;
+    static bool createMasterPubKeyFromPaymentCode(String payment_code_str,CExtPubKey &masterPubKey) ;
     
 };
 #endif

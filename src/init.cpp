@@ -44,7 +44,6 @@
 
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
-#include "bip47/Bip47Wallet.h"
 #endif
 
 #include <stdint.h>
@@ -1861,9 +1860,6 @@ bool AppInit2(boost::thread_group &threadGroup, CScheduler &scheduler) {
     } else {
         CWallet::InitLoadWallet();
         if (!pwalletMain)
-            return false;
-        Bip47Wallet::initLoadBip47Wallet();
-        if (!pbip47WalletMain)
             return false;
 
         

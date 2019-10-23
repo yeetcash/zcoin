@@ -10,15 +10,15 @@ class Bip47Address {
     private:
      String address;
      int index = 0;
-     boolean seen = false;
+     bool seen = false;
     public:
         Bip47Address();
         Bip47Address(String v_address, int v_index);
-        Bip47Address(String v_address, int v_index, boolean v_seen) ;
+        Bip47Address(String v_address, int v_index, bool v_seen) ;
         String getAddress() ;
         int getIndex() ;
-        boolean isSeen() ;
-        void setSeen(boolean v_seen) ;
+        bool isSeen() ;
+        void setSeen(bool v_seen) ;
         virtual String toString() ;
 };
 

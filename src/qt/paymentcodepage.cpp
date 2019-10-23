@@ -28,7 +28,6 @@
 #endif
 
 #include "bip47/PaymentCode.h"
-#include "bip47/Bip47Wallet.h"
 
 #define PCODE_QR_IMAGE_SIZE 150
 
@@ -41,9 +40,9 @@ PaymentcodePage::PaymentcodePage(const PlatformStyle *platformStyle, QWidget *pa
 {
     ui->setupUi(this);
     contextMenu = new QMenu();
-    QString paymentCodeStr = QString::fromStdString(pbip47WalletMain->getPaymentCode());
+    QString paymentCodeStr = QString::fromStdString(pwalletMain->getPaymentCode());
     ui->paymentcodeLabel->setText(paymentCodeStr);
-    QString notificationAddress = QString::fromStdString(std::string("Notification Address is ") + pbip47WalletMain->getNotifiactionAddress());
+    QString notificationAddress = QString::fromStdString(std::string("Notification Address is ") + pwalletMain->getNotifiactionAddress());
     ui->paymentcodeLabel->setToolTip(notificationAddress);
     
 
@@ -95,7 +94,7 @@ PaymentcodePage::~PaymentcodePage()
 }
 
 void PaymentcodePage::copy_button_clicked() {
-    
+    GUIUtil::setClipboard(ui->paymentcodeLabel->toPlainText());
 }
 
 void PaymentcodePage::setClientModel(ClientModel *model)

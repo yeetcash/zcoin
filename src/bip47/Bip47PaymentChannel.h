@@ -2,7 +2,9 @@
 #define BIP47CHANNEL_H
 #include "bip47_common.h"
 #include "Bip47Address.h"
-class Bip47Wallet;
+
+class CWallet;
+
 class Bip47PaymentChannel {
     private:
      static String TAG ;
@@ -28,13 +30,13 @@ class Bip47PaymentChannel {
         void setPaymentCode(String pc);
         std::list<Bip47Address>& getIncomingAddresses() ;
         int getCurrentIncomingIndex() ;
-        void generateKeys(Bip47Wallet *bip47Wallet) ;
+        void generateKeys(CWallet *bip47Wallet) ;
         Bip47Address* getIncomingAddress(String address) ;
         void addNewIncomingAddress(String newAddress, int nextIndex) ;
         String getLabel() ;
         void setLabel(String l) ;
         std::list<String>& getOutgoingAddresses() ;
-        boolean isNotificationTransactionSent() ;
+        bool isNotificationTransactionSent() ;
         void setStatusSent() ;
         int getCurrentOutgoingIndex() ;
         void incrementOutgoingIndex() ;

@@ -27,6 +27,9 @@
 
 #include "primitives/zerocoin.h"
 
+#include "bip47/Bip47Account.h"
+#include "bip47/Bip47PaymentChannel.h"
+
 
 #include <algorithm>
 #include <map>
@@ -1206,6 +1209,36 @@ public:
 
     /* Set the current HD master key (will reset the chain child index counters) */
     bool SetHDMasterKey(const CPubKey& key);
+
+    /** @Todo
+     *  We will need merge bip47 wallet to wallet instead of inherit.
+     *  For now will use separated class
+     * 
+     * */
+private:
+    std::vector<Bip47Account> m_Bip47Accounts;
+    std::map<string, Bip47PaymentChannel> m_Bip47channels;
+public:
+    void loadBip47Wallet(CExtKey masterExtKey);
+    std::string makeNotificationTransaction(std::string paymentCode);
+
+    bool isNotificationTransaction(CTransaction tx);
+    bool isToBIP47Address(CTransaction tx);
+    PaymentCode getPaymentCodeInNotificationTransaction(CTransaction tx);
+    
+    CBitcoinAddress getAddressOfReceived(CTransaction tx);
+    CBitcoinAddress getAddressOfSent(CTransaction tx);
+
+    Bip47Account getBip47Account(int i);
+    
+    std::string getNotifiactionAddress();
+
+    std::string getPaymentCode();
+    
+    void deriveBip47Accounts(std::vector<unsigned char> hd_seed);
+    void deriveBip47Accounts(CExtKey masterKey);
+
+    
 };
 
 /** A key allocated from the key pool. */

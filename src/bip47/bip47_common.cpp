@@ -6,7 +6,6 @@ unsigned char* Bip47_common::arraycopy(const std::vector<unsigned char> &source_
     if(source_arr.size() < sourcePos + len)
     {
         throw std::runtime_error("arraycopy error, source_arr has invalid size");
-        return null;
     }
     return (unsigned char*)memcpy(dest_arr + destPos,source_arr.data() + sourcePos , len);
 }
@@ -14,7 +13,6 @@ unsigned char* Bip47_common::arraycopy(const unsigned char *source_arr,int sourc
     if(dest_arr.size() < destPos + len)
     {
         throw std::runtime_error("arraycopy error, dest_arr has invalid size");
-        return null;
     }
     return (unsigned char*)memcpy(dest_arr.data() + destPos, source_arr + sourcePos , len);
 }
@@ -22,12 +20,10 @@ unsigned char* Bip47_common::arraycopy(const std::vector<unsigned char> &source_
     if(dest_arr.size() < destPos + len)
     {
         throw std::runtime_error("arraycopy error, dest_arr has invalid size");
-        return null;
     }
     if(source_arr.size() < sourcePos + len)
     {
         throw std::runtime_error("arraycopy error, source_arr has invalid size");
-        return null;
     }
     return (unsigned char*)memcpy(dest_arr.data() + destPos, source_arr.data() + sourcePos , len);
 }
@@ -41,7 +37,7 @@ unsigned char* Bip47_common::copyOfRange(const std::vector<unsigned char> &origi
     arraycopy(original, from, result, 0, len);
     return result.data();
 }
-boolean Bip47_common::doublehash(const std::vector<unsigned char> &input,std::vector<unsigned char> &result)
+bool Bip47_common::doublehash(const std::vector<unsigned char> &input,std::vector<unsigned char> &result)
 {
     try{
         SHA256_CTX shaCtx;
@@ -56,7 +52,7 @@ boolean Bip47_common::doublehash(const std::vector<unsigned char> &input,std::ve
     }
     catch(std::exception &e)
     {
-        printf("boolean Bip47_common::doublehash is failed ...\n");
+        printf("bool Bip47_common::doublehash is failed ...\n");
         return false;
     }
     

@@ -1,5 +1,5 @@
 #include "Bip47PaymentChannel.h"
-#include "Bip47Wallet.h"
+#include "wallet/wallet.h"
 
 String Bip47PaymentChannel::TAG = "Bip47PaymentChannel";
 
@@ -41,7 +41,7 @@ int Bip47PaymentChannel::getCurrentIncomingIndex() {
     return currentIncomingIndex;
 }
 
-void Bip47PaymentChannel::generateKeys(Bip47Wallet *bip47Wallet) {
+void Bip47PaymentChannel::generateKeys(CWallet *bip47Wallet) {
 //     for (int i = 0; i < LOOKAHEAD; i++) {
 //         ECKey key = BIP47Util.getReceiveAddress(bip47Wallet, paymentCode, i).getReceiveECKey();
 //         Address address = bip47Wallet->getAddressOfKey(key);
@@ -63,7 +63,7 @@ Bip47Address* Bip47PaymentChannel::getIncomingAddress(String address) {
             return &bip47Address;
         }
     }
-    return null;
+    return nullptr;
 }
 
 void Bip47PaymentChannel::addNewIncomingAddress(String newAddress, int nextIndex) {
@@ -84,7 +84,7 @@ std::list<String>& Bip47PaymentChannel::getOutgoingAddresses() {
     return outgoingAddresses;
 }
 
-boolean Bip47PaymentChannel::isNotificationTransactionSent() {
+bool Bip47PaymentChannel::isNotificationTransactionSent() {
     return status == STATUS_SENT_CFM;
 }
 

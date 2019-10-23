@@ -12,6 +12,7 @@ class BIP47Util {
     static bool getOpCodeOutput(const CTransaction& tx, CTxOut& txout);
     static bool getPaymentCodeInNotificationTransaction(vector<unsigned char> privKeyBytes, CTransaction tx, PaymentCode &paymentCode);
     static bool getOpCodeData(CTxOut txout, vector<unsigned char>& op_data);
+    static bool getScriptSigPubkey(CTxIn txin, vector<unsigned char>& pubkeyBytes);
     static PaymentAddress getPaymentAddress(PaymentCode &pcode, int idx, CExtKey extkey);
 
 };

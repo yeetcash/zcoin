@@ -172,7 +172,6 @@ BITCOIN_CORE_H = \
   limitedmap.h \
   threadinterrupt.h \
   main.h \
-  bip47.h \
   znode.h \
   znode-payments.h \
   znode-sync.h \
@@ -245,7 +244,6 @@ BITCOIN_CORE_H = \
   bip47/Bip47Address.h \
   bip47/Bip47PaymentChannel.h \
   bip47/Bip47Util.h \
-  bip47/Bip47Wallet.h \
   bip47/PaymentAddress.h \
   bip47/PaymentCode.h \
   bip47/Bip47ChannelAddress.h \
@@ -327,7 +325,6 @@ libbitcoin_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_wallet_a_SOURCES = \
   activeznode.cpp \
-  bip47.cpp \
   darksend.cpp \
   hdmint/hdmint.cpp \
   znode.cpp \
@@ -357,7 +354,6 @@ libbitcoin_wallet_a_SOURCES = \
   bip47/Bip47Address.cpp \
   bip47/Bip47PaymentChannel.cpp \
   bip47/Bip47Util.cpp \
-  bip47/Bip47Wallet.cpp \
   bip47/PaymentAddress.cpp \
   bip47/PaymentCode.cpp \
   bip47/Bip47ChannelAddress.cpp \

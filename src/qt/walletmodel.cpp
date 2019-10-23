@@ -26,9 +26,9 @@
 #include "sigma/coin.h"
 
 #include "bip47/PaymentCode.h"
-#include "bip47/Bip47Wallet.h"
 #include "bip47/Bip47Account.h"
 #include "bip47/SecretPoint.h"
+#include "bip47/Bip47Util.h"
 
 #include <stdint.h>
 
@@ -546,13 +546,30 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         bool fCreated = wallet->CreateTransaction(vecSend, *newTx, *keyChange, nFeeRequired, nChangePosRet, strFailReason, coinControl);
         
         CPubKey designatedPubKey;
-        if(!keyChange->GetReservedKey(designatedPubKey))
-        {
-            LogPrintf("Bip47Wallet Error while get designated Pubkey from reserved key\n");
-            throw std::runtime_error("Bip47Wallet Error while get designated Pubkey from reserved key\n");
-        }
+//         if(!keyChange->GetReservedKey(designatedPubKey))
+//         {
+//             LogPrintf("Bip47Wallet Error while get designated Pubkey from reserved key\n");
+//             throw std::runtime_error("Bip47Wallet Error while get designated Pubkey from reserved key\n");
+//         }
         CKey privKey;
-        pwalletMain->GetKey(designatedPubKey.GetID(), privKey);
+        
+        vector<unsigned char> pubKeyBytes;
+
+        if (!BIP47Util::getScriptSigPubkey(newTx->vin[0], pubKeyBytes))
+        {
+            throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig GetPubkey error\n");
+        }
+        else
+        {
+            
+            designatedPubKey.Set(pubKeyBytes.begin(), pubKeyBytes.end());
+            LogPrintf("ScriptSigPubKey Hash %s\n", designatedPubKey.GetHash().GetHex());
+            
+        }
+        
+
+        
+        wallet->GetKey(designatedPubKey.GetID(), privKey);
         CPubKey pubkey = toBip47Account.getNotificationKey().pubkey;
         vector<unsigned char> dataPriv(privKey.size());
         vector<unsigned char> dataPub(pubkey.size());
@@ -562,14 +579,21 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         
         LogPrintf("Generate Secret Point\n");
         SecretPoint secretPoint(dataPriv, dataPub);
+        LogPrintf("Generating Secret Point with \n privekey: %s\n pubkey: %s\n", HexStr(dataPriv), HexStr(dataPub));
+
+
        
-        vector<unsigned char> outpoint = ParseHex(newTx->vin[0].prevout.ToString());
+        vector<unsigned char> outpoint(newTx->vin[0].prevout.hash.begin(), newTx->vin[0].prevout.hash.end());
+
+        LogPrintf("output: %s\n", newTx->vin[0].prevout.hash.GetHex());
+        uint256 secretPBytes(secretPoint.ECDHSecretAsBytes());
+        LogPrintf("secretPoint: %s\n", secretPBytes.GetHex());
 
         LogPrintf("Get Mask from payment code\n");
         vector<unsigned char> mask = PaymentCode::getMask(secretPoint.ECDHSecretAsBytes(), outpoint);
 
         LogPrintf("Get op_return bytes via blind\n");
-        vector<unsigned char> op_return = PaymentCode::blind(pbip47WalletMain->getAccount(0).getPaymentCode().getPayload(), mask);
+        vector<unsigned char> op_return = PaymentCode::blind(pwalletMain->getBip47Account(0).getPaymentCode().getPayload(), mask);
 
         CScript op_returnScriptPubKey = CScript() << OP_RETURN << op_return;
         CRecipient pcodeBlind = {op_returnScriptPubKey, 0, false};
@@ -579,6 +603,22 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         vecSend.push_back(pcodeBlind);
 
         fCreated = wallet->CreateTransaction(vecSend, *newTx, *keyChange, nFeeRequired, nChangePosRet, strFailReason, coinControl);
+
+        if (!BIP47Util::getScriptSigPubkey(newTx->vin[0], pubKeyBytes))
+        {
+            throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig GetPubkey error\n");
+        }
+        else
+        {
+            
+            designatedPubKey.Set(pubKeyBytes.begin(), pubKeyBytes.end());
+            LogPrintf("ScriptSigPubKey Hash %s\n", designatedPubKey.GetHash().GetHex());
+            if(!privKey.VerifyPubKey(designatedPubKey))
+            {
+                throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig designatedPubKey cannot be verified \n");
+            }
+            
+        }
 
 
         transaction.setTransactionFee(nFeeRequired);
