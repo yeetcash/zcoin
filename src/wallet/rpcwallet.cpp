@@ -26,6 +26,7 @@
 #include "zerocoin.h"
 #include "walletexcept.h"
 #include "bip47/PaymentCode.h"
+#include "bip47/SecretPoint.h"
 
 #include <znode-payments.h>
 
@@ -4171,6 +4172,24 @@ UniValue getPaymentCodeFromNotificationTx(const UniValue& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
+UniValue SecretPointCheck(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    
+    if(SecretPoint::SelfTest(pwalletMain))
+    {
+        return "true";
+    }
+    else
+    {
+        return "false";
+    }
+    
+}
+
 
 
 UniValue sendtopcode(const UniValue& params, bool fHelp)
@@ -4414,6 +4433,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "listreceivedbypcode",    &listreceivedbypcode,    false },
     { "wallet",             "getreceivedbypcode",     &getreceivedbypcode,     false },
     { "wallet",             "getPaymentCodeFromNotificationTx",     &getPaymentCodeFromNotificationTx,     false },
+    { "wallet",             "SecretPointCheck",     &SecretPointCheck,     false },
 };
 
 void RegisterWalletRPCCommands(CRPCTable &tableRPC)

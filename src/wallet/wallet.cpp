@@ -1481,12 +1481,24 @@ std::string CWallet::makeNotificationTransaction(std::string paymentCode)
         }
 
         CPubKey designatedPubKey;
-        if(!reservekey.GetReservedKey(designatedPubKey))
-        {
-            LogPrintf("Bip47Wallet Error while get designated Pubkey from reserved key\n");
-            throw std::runtime_error("Bip47Wallet Error while get designated Pubkey from reserved key\n");
-        }
+//         if(!reservekey.GetReservedKey(designatedPubKey))
+//         {
+//             LogPrintf("Bip47Wallet Error while get designated Pubkey from reserved key\n");
+//             throw std::runtime_error("Bip47Wallet Error while get designated Pubkey from reserved key\n");
+//         }
         CKey privKey;
+        vector<unsigned char> pubKeyBytes;
+        if (!BIP47Util::getScriptSigPubkey(wtx.vin[0], pubKeyBytes))
+        {
+            throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig GetPubkey error\n");
+        }
+        else
+        {
+            
+            designatedPubKey.Set(pubKeyBytes.begin(), pubKeyBytes.end());
+            LogPrintf("ScriptSigPubKey Hash %s\n", designatedPubKey.GetHash().GetHex());
+            
+        }
         GetKey(designatedPubKey.GetID(), privKey);
         
         CPubKey pubkey = toBip47Account.getNotificationKey().pubkey;
@@ -1524,6 +1536,22 @@ std::string CWallet::makeNotificationTransaction(std::string paymentCode)
         if(!CreateTransaction(vecSend, wtx, reservekey, nFeeRequired, nChangePosRet, strError)) {
             LogPrintf("Bip47Wallet Error CreateTransaction 2\n");
             throw std::runtime_error(std::string("Bip47Wallet:error ").append(strError));
+        }
+        
+        if (!BIP47Util::getScriptSigPubkey(wtx.vin[0], pubKeyBytes))
+        {
+            throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig GetPubkey error\n");
+        }
+        else
+        {
+            
+            designatedPubKey.Set(pubKeyBytes.begin(), pubKeyBytes.end());
+            LogPrintf("ScriptSigPubKey Hash %s\n", designatedPubKey.GetHash().GetHex());
+            if(!privKey.VerifyPubKey(designatedPubKey))
+            {
+                throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig designatedPubKey cannot be verified \n");
+            }
+            
         }
 
         if(!CommitTransaction(wtx, reservekey)) {

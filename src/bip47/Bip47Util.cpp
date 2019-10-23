@@ -90,6 +90,9 @@ bool BIP47Util::getPaymentCodeInNotificationTransaction(vector<unsigned char> pr
     vector<unsigned char> outpoint(wtx.vin[0].prevout.hash.begin(), wtx.vin[0].prevout.hash.end());
     
     SecretPoint secretPoint(privKeyBytes, pubKeyBytes);
+    
+    LogPrintf("Generating Secret Point for Decode with \n privekey: %s\n pubkey: %s\n", HexStr(privKeyBytes), HexStr(pubKeyBytes));
+    
     LogPrintf("output: %s\n", wtx.vin[0].prevout.hash.GetHex());
     uint256 secretPBytes(secretPoint.ECDHSecretAsBytes());
     LogPrintf("secretPoint: %s\n", secretPBytes.GetHex());

@@ -579,6 +579,7 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         
         LogPrintf("Generate Secret Point\n");
         SecretPoint secretPoint(dataPriv, dataPub);
+        LogPrintf("Generating Secret Point with \n privekey: %s\n pubkey: %s\n", HexStr(dataPriv), HexStr(dataPub));
 
 
        

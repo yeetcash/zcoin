@@ -4,6 +4,8 @@
 #include "key.h"
 #include "pubkey.h"
 #include "sigma/openssl_context.h"
+#include "wallet/wallet.h"
+
 class SecretPoint {
     private:
         CKey  privKey ;
@@ -25,6 +27,7 @@ class SecretPoint {
     std::vector<unsigned char> ECDHSecretAsBytes() ;
 
     bool isShared(SecretPoint secret) ;
+    bool static SelfTest(CWallet* wallet);
 
     private:
     std::vector<unsigned char> ECDHSecret() ;
@@ -33,6 +36,9 @@ class SecretPoint {
 
     void loadPublicKey(std::vector<unsigned char> data) ;
     void loadPrivateKey(std::vector<unsigned char> data) ;
+    
+    
+    
 };
 
 

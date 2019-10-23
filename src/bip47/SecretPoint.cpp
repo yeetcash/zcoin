@@ -47,14 +47,14 @@ std::vector<unsigned char> SecretPoint::ECDHSecret() {
 }
 
 bool SecretPoint::equals(SecretPoint &v_secret){
-    String str1 = HexStr(ECDHSecretAsBytes());
-    String str2 = HexStr(v_secret.ECDHSecretAsBytes());
+    string str1 = HexStr(ECDHSecretAsBytes());
+    string str2 = HexStr(v_secret.ECDHSecretAsBytes());
     if(str1.compare(str2)==0)
         return true ;
     return false ;
 }
 
-void SecretPoint::loadPublicKey(std::vector<unsigned char> data){
+void SecretPoint::loadPublicKey(std::vector<unsigned char> data) {
     secp256k1_context *context = OpenSSLContext::get_context();
     secp256k1_ec_pubkey_parse(context,&pubKey,data.data(),data.size());
 }
@@ -62,3 +62,42 @@ void SecretPoint::loadPublicKey(std::vector<unsigned char> data){
 void SecretPoint::loadPrivateKey(std::vector<unsigned char> data) {
     privKey.Set(data.begin(),data.end(),false);
 }
+
+bool SecretPoint::SelfTest(CWallet* wallet)
+{
+    CKey key1, key2;
+    
+    CPubKey pubkey1, pubkey2;
+    
+    
+    if (!wallet->GetKeyFromPool(pubkey1))
+    {
+        LogPrintf("Cannot get Key from Pool 1\n");
+        return false;
+    }
+    else
+    {
+        wallet->GetKey(pubkey1.GetID(), key1);
+    }
+
+    if (!wallet->GetKeyFromPool(pubkey2))
+    {
+        LogPrintf("Cannot get Key from Pool 2\n");
+        return false;
+    }
+    else
+    {
+        wallet->GetKey(pubkey2.GetID(), key2);
+    }
+
+    std::vector<unsigned char> key1bytes(key1.begin(), key1.end());
+    std::vector<unsigned char> key2bytes(key2.begin(), key2.end());
+    
+    std::vector<unsigned char> pubkey1bytes(pubkey1.begin(), pubkey1.end());
+    std::vector<unsigned char> pubkey2bytes(pubkey2.begin(), pubkey2.end());
+    
+    SecretPoint scretp1(key1bytes, pubkey2bytes);
+    SecretPoint scretp2(key2bytes, pubkey1bytes);
+    return scretp1.equals(scretp2);
+}
+
