@@ -23,10 +23,10 @@ class PaymentCode {
     PaymentCode() ;
     PaymentCode(String payment_code) ;
     PaymentCode(unsigned char* payload, int length) ;
-
-    PaymentCode(unsigned char v_pubkey[33], unsigned char v_chain[32]) ;
     PaymentCode(std::vector<unsigned char> &v_pubkey, std::vector<unsigned char> &v_chain) ;
+    PaymentCode(unsigned char* v_pubkey, unsigned char* v_chain) ;
     PaymentCode(const unsigned char* v_pubkey,  const unsigned char *v_chain) ;
+    
     Bip47ChannelAddress notificationAddress();
 
     Bip47ChannelAddress addressAt(int idx) ;

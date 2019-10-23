@@ -17,7 +17,7 @@ Bip47Account::Bip47Account(String strPaymentCode) {
 
 bool Bip47Account::SetPaymentCodeString(String strPaymentCode)
 {
-    if (!PaymentCode::createMasterPubKeyFromPaymentCode(strPaymentCode, key)) {
+    if (!PaymentCode::createMasterPubKeyFromPaymentCode(strPaymentCode, this->key)) {
         throw std::runtime_error("(CBaseChainParams *parameters, String strPaymentCode).\n");
     }
 
@@ -112,14 +112,25 @@ CBitcoinAddress Bip47Account::getNotificationAddress() {
 
 CExtPubKey Bip47Account::getNotificationKey() {
     CExtPubKey result ;
-    key.Derive(result,0);
-    return result;
+    if(key.Derive(result,0))
+        return result;
+    throw std::runtime_error("Bip47Account getNotificationKey Problem");
 }
 
 CExtKey Bip47Account::getNotificationPrivKey() {
-    CExtKey result ;
+       
+    CExtKey result;
     prvkey.Derive(result,0);
-    return result;
+    CExtPubKey extpubkey = getNotificationKey();
+    if(result.key.VerifyPubKey(extpubkey.pubkey))
+    {
+        return result;
+    }
+    else
+    {
+        throw std::runtime_error("Bip47Account Notification PrivKey Problem");
+    }
+    
 }
 
 PaymentCode Bip47Account::getPaymentCode() {

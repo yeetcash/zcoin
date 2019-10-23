@@ -28,8 +28,7 @@ pubkey(33),chain(32)
         strPaymentCode = makeV1();
     }
 }
-PaymentCode::PaymentCode(std::vector<unsigned char> &v_pubkey, std::vector<unsigned char> &v_chain) 
-:pubkey(33),chain(32)
+PaymentCode::PaymentCode(std::vector<unsigned char> &v_pubkey, std::vector<unsigned char> &v_chain):pubkey(33),chain(32)
 {
     Bip47_common::arraycopy(v_pubkey.data(),0,pubkey,0,33);
     Bip47_common::arraycopy(v_chain.data(),0,chain, 0, 32);

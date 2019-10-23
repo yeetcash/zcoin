@@ -569,7 +569,7 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         
 
         
-        pwalletMain->GetKey(designatedPubKey.GetID(), privKey);
+        wallet->GetKey(designatedPubKey.GetID(), privKey);
         CPubKey pubkey = toBip47Account.getNotificationKey().pubkey;
         vector<unsigned char> dataPriv(privKey.size());
         vector<unsigned char> dataPub(pubkey.size());
@@ -603,7 +603,21 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
 
         fCreated = wallet->CreateTransaction(vecSend, *newTx, *keyChange, nFeeRequired, nChangePosRet, strFailReason, coinControl);
 
-        
+        if (!BIP47Util::getScriptSigPubkey(newTx->vin[0], pubKeyBytes))
+        {
+            throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig GetPubkey error\n");
+        }
+        else
+        {
+            
+            designatedPubKey.Set(pubKeyBytes.begin(), pubKeyBytes.end());
+            LogPrintf("ScriptSigPubKey Hash %s\n", designatedPubKey.GetHash().GetHex());
+            if(!privKey.VerifyPubKey(designatedPubKey))
+            {
+                throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig designatedPubKey cannot be verified \n");
+            }
+            
+        }
 
 
         transaction.setTransactionFee(nFeeRequired);
