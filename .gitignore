@@ -2,6 +2,8 @@
 .project
 .cproject
 .vscode
+.kdev4
+ZCoin.kdev4
 
 *.tar.gz
 

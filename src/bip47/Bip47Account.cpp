@@ -26,6 +26,7 @@ bool Bip47Account::SetPaymentCodeString(String strPaymentCode)
 
 bool Bip47Account::isValid()
 {
+
     Bip47Account testAccount(paymentCode.toString());
     vector<unsigned char> pcodePubkeybytes = testAccount.paymentCode.getPubKey();
     vector<unsigned char> acPubkeybytes(key.pubkey.begin(), key.pubkey.end());

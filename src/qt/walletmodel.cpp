@@ -28,6 +28,7 @@
 #include "bip47/PaymentCode.h"
 #include "bip47/Bip47Account.h"
 #include "bip47/SecretPoint.h"
+#include "bip47/Bip47Util.h"
 
 #include <stdint.h>
 
@@ -545,12 +546,29 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         bool fCreated = wallet->CreateTransaction(vecSend, *newTx, *keyChange, nFeeRequired, nChangePosRet, strFailReason, coinControl);
         
         CPubKey designatedPubKey;
-        if(!keyChange->GetReservedKey(designatedPubKey))
-        {
-            LogPrintf("Bip47Wallet Error while get designated Pubkey from reserved key\n");
-            throw std::runtime_error("Bip47Wallet Error while get designated Pubkey from reserved key\n");
-        }
+//         if(!keyChange->GetReservedKey(designatedPubKey))
+//         {
+//             LogPrintf("Bip47Wallet Error while get designated Pubkey from reserved key\n");
+//             throw std::runtime_error("Bip47Wallet Error while get designated Pubkey from reserved key\n");
+//         }
         CKey privKey;
+        
+        vector<unsigned char> pubKeyBytes;
+
+        if (!BIP47Util::getScriptSigPubkey(newTx->vin[0], pubKeyBytes))
+        {
+            throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig GetPubkey error\n");
+        }
+        else
+        {
+            
+            designatedPubKey.Set(pubKeyBytes.begin(), pubKeyBytes.end());
+            LogPrintf("ScriptSigPubKey Hash %s\n", designatedPubKey.GetHash().GetHex());
+            
+        }
+        
+
+        
         pwalletMain->GetKey(designatedPubKey.GetID(), privKey);
         CPubKey pubkey = toBip47Account.getNotificationKey().pubkey;
         vector<unsigned char> dataPriv(privKey.size());
@@ -561,6 +579,8 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         
         LogPrintf("Generate Secret Point\n");
         SecretPoint secretPoint(dataPriv, dataPub);
+
+
        
         vector<unsigned char> outpoint(newTx->vin[0].prevout.hash.begin(), newTx->vin[0].prevout.hash.end());
 
@@ -582,6 +602,8 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         vecSend.push_back(pcodeBlind);
 
         fCreated = wallet->CreateTransaction(vecSend, *newTx, *keyChange, nFeeRequired, nChangePosRet, strFailReason, coinControl);
+
+        
 
 
         transaction.setTransactionFee(nFeeRequired);
