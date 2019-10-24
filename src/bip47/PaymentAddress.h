@@ -1,6 +1,6 @@
 #ifndef PAYMENTADDRESS_H
 #define PAYMENTADDRESS_H
-#define NetworkParameters char*
+
 #include "wallet/wallet.h"
 #include "PaymentCode.h"
 
@@ -11,11 +11,11 @@ private:
     int index ;
     vector<unsigned char> privKey;
     PaymentCode paymentCode;
-    NetworkParameters networkParameters;
+    
 public:
     PaymentAddress(/* args */);
     PaymentAddress(PaymentCode paymentCode_t) ;
-    PaymentAddress(NetworkParameters networkParameters, PaymentCode paymentCode, int index, vector<unsigned char> privKey) ;
+    PaymentAddress(PaymentCode paymentCode_t, int index_t, vector<unsigned char> privKey_t): paymentCode(paymentCode_t), index(index_t), privKey(privKey_t) {};
     ~PaymentAddress();
     PaymentCode getPaymentCode() ;
     void setPaymentCode(PaymentCode paymentCode_t) ;

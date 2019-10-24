@@ -42,6 +42,7 @@ class Bip47PaymentChannel {
         void incrementOutgoingIndex() ;
         void addAddressToOutgoingAddresses(String address) ;
         void setStatusNotSent() ;
+        
 };
 
 #endif

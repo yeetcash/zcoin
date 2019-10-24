@@ -1,5 +1,9 @@
 #include "Bip47PaymentChannel.h"
 #include "wallet/wallet.h"
+#include "Bip47Util.h"
+#include "Bip47Address.h"
+#include "PaymentAddress.h"
+
 
 String Bip47PaymentChannel::TAG = "Bip47PaymentChannel";
 
@@ -42,6 +46,11 @@ int Bip47PaymentChannel::getCurrentIncomingIndex() {
 }
 
 void Bip47PaymentChannel::generateKeys(CWallet *bip47Wallet) {
+    for(int i = 0; i < LOOKAHEAD; i++)
+    {
+        PaymentCode pcode(paymentCode);
+        PaymentAddress paddr = BIP47Util::getReceiveAddress(bip47Wallet, pcode, i);
+    }
 //     for (int i = 0; i < LOOKAHEAD; i++) {
 //         ECKey key = BIP47Util.getReceiveAddress(bip47Wallet, paymentCode, i).getReceiveECKey();
 //         Address address = bip47Wallet->getAddressOfKey(key);

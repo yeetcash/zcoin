@@ -978,7 +978,14 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction &tx, const CBlock *pbl
 
         if(isNotificationTransaction(tx))
         {
-            
+            PaymentCode from_pcode = getPaymentCodeInNotificationTransaction (tx);
+            if(from_pcode.isValid()) {
+                bool needsSaving = savePaymentCode(from_pcode);
+            } 
+            else
+            {
+                
+            }
         }
         else if(isToBIP47Address(tx))
         {
@@ -1481,11 +1488,7 @@ std::string CWallet::makeNotificationTransaction(std::string paymentCode)
         }
 
         CPubKey designatedPubKey;
-//         if(!reservekey.GetReservedKey(designatedPubKey))
-//         {
-//             LogPrintf("Bip47Wallet Error while get designated Pubkey from reserved key\n");
-//             throw std::runtime_error("Bip47Wallet Error while get designated Pubkey from reserved key\n");
-//         }
+
         CKey privKey;
         vector<unsigned char> pubKeyBytes;
         if (!BIP47Util::getScriptSigPubkey(wtx.vin[0], pubKeyBytes))
@@ -1511,8 +1514,6 @@ std::string CWallet::makeNotificationTransaction(std::string paymentCode)
         LogPrintf("Generate Secret Point\n");
         SecretPoint secretPoint(dataPriv, dataPub);
        
-        //vector<unsigned char> outpoint = ParseHex(wtx.vin[0].prevout.ToString());
-        
         vector<unsigned char> outpoint(wtx.vin[0].prevout.hash.begin(), wtx.vin[0].prevout.hash.end());
 
         LogPrintf("output: %s\n", wtx.vin[0].prevout.hash.GetHex());
@@ -1592,7 +1593,6 @@ PaymentCode CWallet::getPaymentCodeInNotificationTransaction(CTransaction tx)
     PaymentCode paymentCode;
     CKey notificationPKey = m_Bip47Accounts[0].getNotificationPrivKey().key;
     vector<unsigned char> prvKeyBytes(notificationPKey.begin(), notificationPKey.end());
-//     m_Bip47Accounts[0].getNotificationPrivKey().key.IsValid
     LogPrintf("The privkey Size is %d\n", prvKeyBytes.size());
     if(!BIP47Util::getPaymentCodeInNotificationTransaction(prvKeyBytes , tx, paymentCode))
     {
@@ -1649,6 +1649,26 @@ CBitcoinAddress CWallet::getAddressOfSent(CTransaction tx)
         
     }
     return CBitcoinAddress();
+}
+
+bool CWallet::savePaymentCode(PaymentCode from_pcode)
+{
+    if(m_Bip47channels.count(from_pcode.toString()) > 0)
+    {
+        map<string, Bip47PaymentChannel>::iterator mi = m_Bip47channels.find(from_pcode.toString());
+        if(mi != m_Bip47channels.end())
+        {
+//             const Bip47PaymentChannel *paymentChannel = &(mi->second);    
+            if(mi->second.getIncomingAddresses().size() != 0) 
+                return false;
+            else 
+            {
+                mi->second.generateKeys(this);
+            }
+        }
+        
+    }
+    return true;
 }
 
 Bip47Account CWallet::getBip47Account(int i)

@@ -1228,6 +1228,8 @@ public:
     
     CBitcoinAddress getAddressOfReceived(CTransaction tx);
     CBitcoinAddress getAddressOfSent(CTransaction tx);
+    
+    bool savePaymentCode(PaymentCode from_pcode);
 
     Bip47Account getBip47Account(int i);
     

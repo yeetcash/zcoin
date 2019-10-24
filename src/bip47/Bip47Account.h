@@ -2,6 +2,8 @@
 #define BIP47ACCOUNT_H
 #include "bip47_common.h"
 #include "PaymentCode.h"
+#include "key.h"
+#include "pubkey.h"
 
 class Bip47Account {
     private:
@@ -28,6 +30,7 @@ class Bip47Account {
     Bip47ChannelAddress addressAt(int idx);
 
     CExtPubKey keyAt(int idx);
+    CExtKey keyPrivAt(int idx);
     bool isValid();
 
 };
