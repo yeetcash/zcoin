@@ -13,9 +13,6 @@ private:
     vector<unsigned char> privKey;
     PaymentCode paymentCode;
 
-    SecretPoint sharedSecret();
-    void secretPoint();
-
 public:
     PaymentAddress(/* args */);
     
@@ -23,7 +20,7 @@ public:
     
     PaymentAddress(PaymentCode paymentCode_t, int index_t, vector<unsigned char> privKey_t): paymentCode(paymentCode_t), index(index_t), privKey(privKey_t) {};
     
-    ~PaymentAddress();
+    ~PaymentAddress() {};
     
     PaymentCode getPaymentCode() ;
     
@@ -35,15 +32,40 @@ public:
     
     vector<unsigned char> getPrivKey();
     
-    CPubKey getReceiveECKey();
-    
     void setIndexAndPrivKey(int index, vector<unsigned char> privKey);
     
     void setPrivKey(vector<unsigned char> privKey);
     
+    CPubKey getSendECKey();
+    
+    CPubKey getReceiveECKey();
+    
+    GroupElement get_sG();
+    
     SecretPoint getSharedSecret();
     
+    Scalar getSecretPoint();
+    
+    GroupElement getECPoint();
+    
+    
+    
     std::vector<unsigned char> hashSharedSecret();
+    
+private:
+    
+    SecretPoint sharedSecret();
+    
+    Scalar secretPoint();
+    
+    GroupElement get_sG(Scalar s);
+    
+    CPubKey getSendECKey(Scalar s);
+
+    
+
+    
+    
 
 
 };

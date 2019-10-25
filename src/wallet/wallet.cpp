@@ -59,6 +59,7 @@
 #include "bip47/Bip47ChannelAddress.h"
 #include "bip47/Bip47Address.h"
 #include "bip47/Bip47Util.h"
+#include "bip47/PaymentAddress.h"
 
 using namespace std;
 
@@ -1770,6 +1771,14 @@ void CWallet::processNotificationTransaction(CTransaction tx)
     {
 
     }
+}
+
+std::string CWallet::getCurrentOutgoingAddress(Bip47PaymentChannel paymentChannel)
+{
+    PaymentCode payment_to(paymentChannel.getPaymentCode());
+    PaymentAddress paddr = BIP47Util::getSendAddress(this, payment_to, paymentChannel.getCurrentOutgoingIndex());
+    paddr.getSendECKey();
+    return std::string("");
 }
 
 int64_t CWalletTx::GetTxTime() const {

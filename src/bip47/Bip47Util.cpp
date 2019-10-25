@@ -151,17 +151,28 @@ PaymentAddress BIP47Util::getPaymentAddress(PaymentCode &pcode, int idx, CExtKey
     
 }
 
-PaymentAddress BIP47Util::getReceiveAddress(CWallet* pbip47Wallet, PaymentCode &paymnetCode, int idx)
+PaymentAddress BIP47Util::getReceiveAddress(CWallet* pbip47Wallet, PaymentCode &pcode_from, int idx)
 {
     PaymentAddress pm_address;
     CExtKey accEkey = pbip47Wallet->getBip47Account(0).keyPrivAt(idx);
     if(accEkey.key.IsValid()){
     }
-    pm_address = getPaymentAddress(paymnetCode, idx, accEkey);
+    pm_address = getPaymentAddress(pcode_from, 0, accEkey);
     
     return pm_address;
 }
 
+PaymentAddress BIP47Util::getSendAddress(CWallet* pbip47Wallet, PaymentCode &pcode_to, int idx)
+{
+    PaymentAddress pm_address;
+    CExtKey accEkey = pbip47Wallet->getBip47Account(0).keyPrivAt(0);
+    if(accEkey.key.IsValid()){
+    }
+    pm_address = getPaymentAddress(pcode_to, idx, accEkey);
+    
+    return pm_address;
+    
+}
 
 
 

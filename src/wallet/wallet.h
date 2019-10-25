@@ -1245,6 +1245,8 @@ public:
     void saveBip47PaymentChannelData();
     
     void processNotificationTransaction(CTransaction tx);
+    
+    std::string getCurrentOutgoingAddress(Bip47PaymentChannel paymentChannel);
 
     
 };
