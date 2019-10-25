@@ -4254,6 +4254,16 @@ UniValue validatepcode(const UniValue& params, bool fHelp)
         Bip47PaymentChannel pchannel(strPcode);
         std::string outaddress = pwalletMain->getCurrentOutgoingAddress(pchannel);
         ret.push_back(Pair("OutGoingAddress", outaddress));
+        if(pchannel.getIncomingAddresses().size() == 0) {
+            PaymentAddress paddr = BIP47Util::getReceiveAddress(pwalletMain, paymentCode, 0);
+            CKey receiveKey = paddr.getReceiveECKey();
+            CPubKey rePubKey = receiveKey.GetPubKey();
+            CBitcoinAddress rcvAddr(rePubKey.GetID());
+            ret.push_back(Pair("IncomingAddress", rcvAddr.ToString()));
+        } else {
+            LogPrintf("current Incoming Address size = %d\n", pchannel.getIncomingAddresses().size());
+            
+        }
         
     }
 

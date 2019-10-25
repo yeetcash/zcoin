@@ -38,7 +38,7 @@ public:
     
     CPubKey getSendECKey();
     
-    CPubKey getReceiveECKey();
+    CKey getReceiveECKey();
     
     GroupElement get_sG();
     
@@ -62,7 +62,7 @@ private:
     
     CPubKey getSendECKey(Scalar s);
 
-    
+    CKey getReceiveECKey(Scalar s);
 
     
     

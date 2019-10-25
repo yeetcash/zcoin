@@ -14,6 +14,7 @@ PaymentAddress::PaymentAddress(PaymentCode paymentCode_t)
     paymentCode = paymentCode_t;
     index = 0;
     // privKey = nullptr;
+    
 }
 
 PaymentCode PaymentAddress::getPaymentCode() {
@@ -41,35 +42,17 @@ void PaymentAddress::setIndexAndPrivKey(int index_t, vector<unsigned char> privK
 }
 
 void PaymentAddress::setPrivKey(vector<unsigned char> privKey_t) {
-    privKey = privKey;
+    privKey = privKey_t;
 }
 
 CPubKey PaymentAddress::getSendECKey()
 {
-    hashSharedSecret();
-    
-//     ecPoint
-    
-    paymentCode.addressAt(index).getPubKey();
-    
-    CPubKey ppkey;
-    
-    CKey privateK;
-    CPrivKey privatekk;
-    
-//     privateK.SetPrivKey()
-    
-    
-    return ppkey;
+    return getSendECKey(getSecretPoint());
 }
 
-CPubKey PaymentAddress::getReceiveECKey()
+CKey PaymentAddress::getReceiveECKey()
 {
-    hashSharedSecret();
-    this->privKey;
-    
-    CPubKey ppkey;
-    return ppkey;
+    return getReceiveECKey(getSecretPoint());
 }
 
 GroupElement PaymentAddress::get_sG()
@@ -97,15 +80,11 @@ GroupElement PaymentAddress::getECPoint() {
 
 std::vector<unsigned char> PaymentAddress::hashSharedSecret() {
 
-    uint256 hashval, hashval2;
-    
     std::vector<unsigned char> shardbytes = getSharedSecret().ECDHSecretAsBytes();
     Scalar scal(shardbytes.data());
     sigma::Params* _ec_params = sigma::Params::get_default();
     GroupElement sg = _ec_params->get_g() * scal;
     
-    
-
     return shardbytes;
 }
 
@@ -120,7 +99,21 @@ CPubKey PaymentAddress::getSendECKey(Scalar s)
     GroupElement sG = get_sG(s);
     GroupElement ecG = ecPoint + sG;
     
+    unsigned char buffer[33] = {0};
+    unsigned char* bufferflow = ecG.serialize(buffer);
     CPubKey pkey;
+    pkey.Set(&buffer[0], bufferflow);
+
+    return pkey;
+}
+
+CKey PaymentAddress::getReceiveECKey(Scalar s)
+{
+    Scalar privKeyValue(privKey.data());
+    Scalar newKeyS = privKeyValue + s;
+    CKey pkey;
+    vector<unsigned char> ppkeybytes = ParseHex(newKeyS.GetHex());
+    pkey.Set(ppkeybytes.begin(), ppkeybytes.end(), true);
     return pkey;
 }
 
@@ -133,7 +126,7 @@ SecretPoint PaymentAddress::sharedSecret()
 secp_primitives::Scalar PaymentAddress::secretPoint()
 {
     return secp_primitives::Scalar(hashSharedSecret().data());
-    
+
 }
 
 

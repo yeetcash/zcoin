@@ -1777,8 +1777,9 @@ std::string CWallet::getCurrentOutgoingAddress(Bip47PaymentChannel paymentChanne
 {
     PaymentCode payment_to(paymentChannel.getPaymentCode());
     PaymentAddress paddr = BIP47Util::getSendAddress(this, payment_to, paymentChannel.getCurrentOutgoingIndex());
-    paddr.getSendECKey();
-    return std::string("");
+    CPubKey outgoingKey = paddr.getSendECKey();
+    CBitcoinAddress outAddress(outgoingKey.GetID());
+    return outAddress.ToString();
 }
 
 int64_t CWalletTx::GetTxTime() const {
