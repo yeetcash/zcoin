@@ -5,7 +5,7 @@
 #include "PaymentAddress.h"
 
 
-String Bip47PaymentChannel::TAG = "Bip47PaymentChannel";
+string Bip47PaymentChannel::TAG = "Bip47PaymentChannel";
 
 int Bip47PaymentChannel::STATUS_NOT_SENT = -1;
 int Bip47PaymentChannel::STATUS_SENT_CFM = 1;
@@ -16,7 +16,7 @@ currentOutgoingIndex(0),
 currentIncomingIndex(-1)
 {}
 
-Bip47PaymentChannel::Bip47PaymentChannel(String v_paymentCode)
+Bip47PaymentChannel::Bip47PaymentChannel(string v_paymentCode)
 : status(STATUS_NOT_SENT),
 currentOutgoingIndex(0),
 currentIncomingIndex(-1)
@@ -24,16 +24,16 @@ currentIncomingIndex(-1)
     paymentCode = v_paymentCode;
 }
 
-Bip47PaymentChannel::Bip47PaymentChannel(String v_paymentCode, String v_label) {
+Bip47PaymentChannel::Bip47PaymentChannel(string v_paymentCode, string v_label) {
     paymentCode = v_paymentCode ;
     label = v_label;
 }
 
-String Bip47PaymentChannel::getPaymentCode() {
+string Bip47PaymentChannel::getPaymentCode() {
     return paymentCode;
 }
 
-void Bip47PaymentChannel::setPaymentCode(String pc) {
+void Bip47PaymentChannel::setPaymentCode(string pc) {
     paymentCode = pc;
 }
 
@@ -50,13 +50,17 @@ void Bip47PaymentChannel::generateKeys(CWallet *bip47Wallet) {
     {
         PaymentCode pcode(paymentCode);
         PaymentAddress paddr = BIP47Util::getReceiveAddress(bip47Wallet, pcode, i);
+        paddr.getReceiveECKey();
+        CKey kkk;
+        
+//         paddr.getReceiveECKey()
     }
 //     for (int i = 0; i < LOOKAHEAD; i++) {
 //         ECKey key = BIP47Util.getReceiveAddress(bip47Wallet, paymentCode, i).getReceiveECKey();
 //         Address address = bip47Wallet->getAddressOfKey(key);
 
 //         log.debug("New address generated");
-//         log.debug(address.toString());
+//         log.debug(address.tostring());
 //         bip47Wallet->importKey(key);
 // //            incomingAddresses.add(i, new Bip47Address(address.toString(), i));
 //         incomingAddresses.push_back(Bip47Address(address.toString(), i));
@@ -66,7 +70,7 @@ void Bip47PaymentChannel::generateKeys(CWallet *bip47Wallet) {
 //     currentIncomingIndex = LOOKAHEAD - 1;
 }
 
-Bip47Address* Bip47PaymentChannel::getIncomingAddress(String address) {
+Bip47Address* Bip47PaymentChannel::getIncomingAddress(string address) {
     for (Bip47Address bip47Address: incomingAddresses) {
         if (bip47Address.getAddress().compare(address)==0) {
             return &bip47Address;
@@ -75,21 +79,21 @@ Bip47Address* Bip47PaymentChannel::getIncomingAddress(String address) {
     return nullptr;
 }
 
-void Bip47PaymentChannel::addNewIncomingAddress(String newAddress, int nextIndex) {
+void Bip47PaymentChannel::addNewIncomingAddress(string newAddress, int nextIndex) {
     //incomingAddresses.add(nextIndex, new Bip47Address(newAddress, nextIndex));
     incomingAddresses.push_back(Bip47Address(newAddress, nextIndex));      
     currentIncomingIndex = nextIndex;
 }
 
-String Bip47PaymentChannel::getLabel() {
+string Bip47PaymentChannel::getLabel() {
     return label;
 }
 
-void Bip47PaymentChannel::setLabel(String l) {
+void Bip47PaymentChannel::setLabel(string l) {
     label = l;
 }
 
-std::list<String>& Bip47PaymentChannel::getOutgoingAddresses() {
+std::list<string>& Bip47PaymentChannel::getOutgoingAddresses() {
     return outgoingAddresses;
 }
 
@@ -109,7 +113,7 @@ void Bip47PaymentChannel::incrementOutgoingIndex() {
     currentOutgoingIndex++;
 }
 
-void Bip47PaymentChannel::addAddressToOutgoingAddresses(String address) {
+void Bip47PaymentChannel::addAddressToOutgoingAddresses(string address) {
     outgoingAddresses.push_back(address);
 }
 

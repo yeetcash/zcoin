@@ -4154,6 +4154,12 @@ UniValue getPaymentCodeFromNotificationTx(const UniValue& params, bool fHelp)
         PaymentCode pcode = pwalletMain->getPaymentCodeInNotificationTransaction(tx);
         if (pcode.isValid())
         {
+            bool needsSaving = pwalletMain->savePaymentCode(pcode);
+            if(needsSaving)
+            {
+                LogPrintf("saveBip47PaymentChannelData\n");
+                pwalletMain->saveBip47PaymentChannelData();
+            }
             return pcode.toString();
         }
         else
@@ -4434,6 +4440,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "getreceivedbypcode",     &getreceivedbypcode,     false },
     { "wallet",             "getPaymentCodeFromNotificationTx",     &getPaymentCodeFromNotificationTx,     false },
     { "wallet",             "SecretPointCheck",     &SecretPointCheck,     false },
+    
 };
 
 void RegisterWalletRPCCommands(CRPCTable &tableRPC)

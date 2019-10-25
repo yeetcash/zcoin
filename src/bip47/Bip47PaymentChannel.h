@@ -2,21 +2,23 @@
 #define BIP47CHANNEL_H
 #include "bip47_common.h"
 #include "Bip47Address.h"
+#include <string>
+#include "serialize.h"
 
 class CWallet;
 
 class Bip47PaymentChannel {
     private:
-     static String TAG ;
+     static string TAG ;
 
      static int STATUS_NOT_SENT ;
      static int STATUS_SENT_CFM ;
      static int LOOKAHEAD ;
 
-     String paymentCode;
-     String label;
+     string paymentCode;
+     string label;
      std::list<Bip47Address> incomingAddresses ;
-     std::list<String> outgoingAddresses ;
+     std::list<string> outgoingAddresses ;
      int status;
      int currentOutgoingIndex ;
      int currentIncomingIndex ;
@@ -24,24 +26,36 @@ class Bip47PaymentChannel {
     // private static final Logger log = LoggerFactory.getLogger(Bip47PaymentChannel.class);
     public:
         Bip47PaymentChannel() ;
-        Bip47PaymentChannel(String v_paymentCode);
-        Bip47PaymentChannel(String v_paymentCode, String v_label) ;
-        String getPaymentCode() ;
-        void setPaymentCode(String pc);
+        Bip47PaymentChannel(string v_paymentCode);
+        Bip47PaymentChannel(string v_paymentCode, string v_label) ;
+        string getPaymentCode() ;
+        void setPaymentCode(string pc);
         std::list<Bip47Address>& getIncomingAddresses() ;
         int getCurrentIncomingIndex() ;
         void generateKeys(CWallet *bip47Wallet) ;
-        Bip47Address* getIncomingAddress(String address) ;
-        void addNewIncomingAddress(String newAddress, int nextIndex) ;
-        String getLabel() ;
-        void setLabel(String l) ;
-        std::list<String>& getOutgoingAddresses() ;
+        Bip47Address* getIncomingAddress(string address) ;
+        void addNewIncomingAddress(string newAddress, int nextIndex) ;
+        string getLabel() ;
+        void setLabel(string l) ;
+        std::list<string>& getOutgoingAddresses() ;
         bool isNotificationTransactionSent() ;
         void setStatusSent() ;
         int getCurrentOutgoingIndex() ;
         void incrementOutgoingIndex() ;
-        void addAddressToOutgoingAddresses(String address) ;
+        void addAddressToOutgoingAddresses(string address) ;
         void setStatusNotSent() ;
+        
+        ADD_SERIALIZE_METHODS;
+        template <typename Stream, typename Operation>
+        inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+            if (ser_action.ForRead())
+                READWRITE(nVersion);
+            READWRITE(paymentCode);
+            READWRITE(label);
+            READWRITE(status);
+            READWRITE(currentIncomingIndex);
+            READWRITE(currentOutgoingIndex);
+        }
         
 };
 

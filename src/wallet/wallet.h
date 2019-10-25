@@ -690,6 +690,7 @@ public:
 
     bool fFileBacked;
     std::string strWalletFile;
+    static std::string bip47WalletFile;
 
     std::set<int64_t> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
@@ -1239,6 +1240,11 @@ public:
     
     void deriveBip47Accounts(std::vector<unsigned char> hd_seed);
     void deriveBip47Accounts(CExtKey masterKey);
+    
+    bool importBip47PaymentChannelData();
+    void saveBip47PaymentChannelData();
+    
+    void processNotificationTransaction(CTransaction tx);
 
     
 };

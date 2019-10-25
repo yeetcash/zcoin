@@ -331,6 +331,7 @@ public:
 
     //! write the bip47hdchain model (external chain child index counter)
     bool WriteCBip47HDChain(const CBip47HDChain& bip47chain);
+    bool WritePaymentChannelData();
 
 private:
     CWalletDB(const CWalletDB&);
