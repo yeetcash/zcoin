@@ -74,7 +74,7 @@ GroupElement PaymentAddress::getECPoint() {
     pubkey.Set(pubkeybytes.begin(), pubkeybytes.end());
     
     GroupElement ge;
-    ge.deserialize(pubkeybytes.data());
+    ge.generate(pubkeybytes.data());
     return ge;
 }
 
@@ -95,12 +95,19 @@ GroupElement PaymentAddress::get_sG(Scalar s) {
 
 CPubKey PaymentAddress::getSendECKey(Scalar s)
 {
+    LogPrintf("getSendECKey:SecretPoint = %s\n", s.GetHex());
+    
     GroupElement ecPoint = getECPoint();
+    LogPrintf("getSendECKey:ecPoint = %s\n", ecPoint.GetHex());
+    
     GroupElement sG = get_sG(s);
     GroupElement ecG = ecPoint + sG;
+    LogPrintf("getSendECKey:ecG= %s\n", ecG.GetHex());
     
     unsigned char buffer[33] = {0};
     unsigned char* bufferflow = ecG.serialize(buffer);
+    LogPrintf("getSendECKey:buffer = %s\n", HexStr(&buffer[0], bufferflow));
+    
     CPubKey pkey;
     pkey.Set(&buffer[0], bufferflow);
 
