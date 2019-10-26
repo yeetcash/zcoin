@@ -1,5 +1,6 @@
 #include "PaymentAddress.h"
 #include "PaymentCode.h"
+#include "bip47_common.h"
 
 
 PaymentAddress::PaymentAddress()
@@ -81,9 +82,6 @@ GroupElement PaymentAddress::getECPoint() {
 std::vector<unsigned char> PaymentAddress::hashSharedSecret() {
 
     std::vector<unsigned char> shardbytes = getSharedSecret().ECDHSecretAsBytes();
-    Scalar scal(shardbytes.data());
-    sigma::Params* _ec_params = sigma::Params::get_default();
-    GroupElement sg = _ec_params->get_g() * scal;
     
     return shardbytes;
 }
@@ -103,13 +101,19 @@ CPubKey PaymentAddress::getSendECKey(Scalar s)
     GroupElement sG = get_sG(s);
     GroupElement ecG = ecPoint + sG;
     LogPrintf("getSendECKey:ecG= %s\n", ecG.GetHex());
-    
-    unsigned char buffer[33] = {0};
+    LogPrintf("getSendECKey:buffersize required = %d\n", ecG.memoryRequired());
+
+    unsigned char buffer[34] = {0};
     unsigned char* bufferflow = ecG.serialize(buffer);
+    
     LogPrintf("getSendECKey:buffer = %s\n", HexStr(&buffer[0], bufferflow));
     
     CPubKey pkey;
-    pkey.Set(&buffer[0], bufferflow);
+    vector<unsigned char> pkeybytes(33);
+    pkeybytes[0] = buffer[32] == 0 ? 0x03 : 0x02;
+    Bip47_common::arraycopy(buffer, 0, pkeybytes, 1, 32);
+    pkey.Set(pkeybytes.begin(), pkeybytes.end());
+    LogPrintf("Validate getSendECKey is %s\n", pkey.IsValid()? "true":"false");
 
     return pkey;
 }
