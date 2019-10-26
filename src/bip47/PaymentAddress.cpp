@@ -75,7 +75,10 @@ GroupElement PaymentAddress::getECPoint() {
     pubkey.Set(pubkeybytes.begin(), pubkeybytes.end());
     
     GroupElement ge;
-    ge.generate(pubkeybytes.data());
+    
+    pubkeybytes.push_back(0x0);
+    ge.deserialize(pubkeybytes.data());
+    
     return ge;
 }
 
@@ -110,7 +113,7 @@ CPubKey PaymentAddress::getSendECKey(Scalar s)
     
     CPubKey pkey;
     vector<unsigned char> pkeybytes(33);
-    pkeybytes[0] = buffer[32] == 0 ? 0x03 : 0x02;
+    pkeybytes[0] = buffer[32] == 0 ? 0x02 : 0x03;
     Bip47_common::arraycopy(buffer, 0, pkeybytes, 1, 32);
     pkey.Set(pkeybytes.begin(), pkeybytes.end());
     LogPrintf("Validate getSendECKey is %s\n", pkey.IsValid()? "true":"false");
@@ -123,7 +126,9 @@ CKey PaymentAddress::getReceiveECKey(Scalar s)
     Scalar privKeyValue(privKey.data());
     Scalar newKeyS = privKeyValue + s;
     
+    
     CKey pkey;
+    
     vector<unsigned char> ppkeybytes = ParseHex(newKeyS.GetHex());
     pkey.Set(ppkeybytes.begin(), ppkeybytes.end(), true);
     LogPrintf( "getReceiveECKey validate key is %s\n", pkey.IsValid() ? "true":"false") ;
