@@ -144,10 +144,14 @@ bool BIP47Util::getScriptSigPubkey(CTxIn txin, vector<unsigned char>& pubkeyByte
 }
 
 PaymentAddress BIP47Util::getPaymentAddress(PaymentCode &pcode, int idx, CExtKey extkey) {
-    CPrivKey privekey = extkey.key.GetPrivKey();
+//     CPrivKey privekey = extkey.key.GetPrivKey();
+    CKey prvkey = extkey.key;
+//     vector<unsigned char> privKey(privekey.begin(), privekey.end());
     
-    vector<unsigned char> privKey(privekey.begin(), privekey.end());
-    PaymentAddress paddr(pcode, idx, privKey);
+    vector<unsigned char> ppkeybytes(prvkey.begin(), prvkey.end());
+    
+    
+    PaymentAddress paddr(pcode, idx, ppkeybytes);
     return paddr;
     
 }

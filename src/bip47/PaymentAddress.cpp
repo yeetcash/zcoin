@@ -122,9 +122,11 @@ CKey PaymentAddress::getReceiveECKey(Scalar s)
 {
     Scalar privKeyValue(privKey.data());
     Scalar newKeyS = privKeyValue + s;
+    
     CKey pkey;
     vector<unsigned char> ppkeybytes = ParseHex(newKeyS.GetHex());
     pkey.Set(ppkeybytes.begin(), ppkeybytes.end(), true);
+    LogPrintf( "getReceiveECKey validate key is %s\n", pkey.IsValid() ? "true":"false") ;
     return pkey;
 }
 
