@@ -73,11 +73,12 @@ GroupElement PaymentAddress::getECPoint() {
     CPubKey pubkey;
     vector<unsigned char> pubkeybytes = paymentCode.addressAt(index).getPubKey();
     pubkey.Set(pubkeybytes.begin(), pubkeybytes.end());
-    
+
     GroupElement ge;
     
+    pubkeybytes.push_back(pubkeybytes[0]);
     pubkeybytes.push_back(0x0);
-    ge.deserialize(pubkeybytes.data());
+    ge.deserialize(pubkeybytes.data() + 1);
     
     return ge;
 }
