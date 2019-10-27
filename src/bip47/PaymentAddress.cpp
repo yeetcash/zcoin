@@ -76,7 +76,7 @@ GroupElement PaymentAddress::getECPoint() {
 
     GroupElement ge;
     
-    pubkeybytes.push_back(pubkeybytes[0]);
+    pubkeybytes.push_back(pubkeybytes[0] == 0x02 ? 0 : 1);
     pubkeybytes.push_back(0x0);
     ge.deserialize(pubkeybytes.data() + 1);
     
