@@ -126,16 +126,17 @@ CPubKey PaymentAddress::getSendECKey(Scalar s)
     secp256k1_ec_pubkey_serialize(context, pubkey_bytes.data(), &pubkey_size, &pubKey, SECP256K1_EC_COMPRESSED);
     
     
-    LogPrintf("getSendECKey:pubkey_bytes = %s\n", HexStr(pubkey_bytes));
+    LogPrintf("getSendECKey:pubkey_bytes = %s size = %d\n", HexStr(pubkey_bytes), pubkey_size);
     
     CPubKey pkey;
     pkey.Set(pubkey_bytes.begin(), pubkey_bytes.end());
+    
     
 //     vector<unsigned char> pkeybytes(33);
 //     pkeybytes[0] = buffer[32] == 0 ? 0x02 : 0x03;
 //     Bip47_common::arraycopy(buffer, 0, pkeybytes, 1, 32);
 //     pkey.Set(pkeybytes.begin(), pkeybytes.end());
-//     LogPrintf("Validate getSendECKey is %s\n", pkey.IsValid()? "true":"false");
+    LogPrintf("Validate getSendECKey is %s\n", pkey.IsValid()? "true":"false");
 
     return pkey;
 }
