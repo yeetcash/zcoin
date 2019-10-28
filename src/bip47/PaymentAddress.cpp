@@ -104,7 +104,7 @@ CPubKey PaymentAddress::getSendECKey(Scalar s)
     LogPrintf("getSendECKey:ecPoint = %s\n", ecPoint.GetHex());
     
     GroupElement sG = get_sG(s);
-    LogPrintf("getSendECKey:sG = %s\n", ecPoint.GetHex());
+    LogPrintf("getSendECKey:sG = %s\n", sG.GetHex());
     GroupElement ecG = ecPoint + sG;
     LogPrintf("getSendECKey:ecG= %s\n", ecG.GetHex());
     LogPrintf("getSendECKey:buffersize required = %d\n", ecG.memoryRequired());
