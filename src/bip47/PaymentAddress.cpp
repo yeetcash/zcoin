@@ -86,6 +86,7 @@ GroupElement PaymentAddress::getECPoint() {
 std::vector<unsigned char> PaymentAddress::hashSharedSecret() {
 
     std::vector<unsigned char> shardbytes = getSharedSecret().ECDHSecretAsBytes();
+    LogPrintf("Hash Shared Secret: %s\n", HexStr(shardbytes));
     
     return shardbytes;
 }
@@ -126,7 +127,6 @@ CKey PaymentAddress::getReceiveECKey(Scalar s)
 {
     Scalar privKeyValue(privKey.data());
     Scalar newKeyS = privKeyValue + s;
-    
     
     CKey pkey;
     
