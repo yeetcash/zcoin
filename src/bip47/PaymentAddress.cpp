@@ -70,15 +70,19 @@ Scalar PaymentAddress::getSecretPoint() {
 }
 
 GroupElement PaymentAddress::getECPoint() {
-    CPubKey pubkey;
     vector<unsigned char> pubkeybytes = paymentCode.addressAt(index).getPubKey();
-    pubkey.Set(pubkeybytes.begin(), pubkeybytes.end());
-
+    
+    secp256k1_pubkey pubKey ;
+    secp256k1_context *context = OpenSSLContext::get_context();
+    secp256k1_ec_pubkey_parse(context,&pubKey, pubkeybytes.data(), pubkeybytes.size());
+    
     GroupElement ge;
     
-    pubkeybytes.push_back(pubkeybytes[0] == 0x02 ? 0 : 1);
-    pubkeybytes.push_back(0x0);
-    ge.deserialize(pubkeybytes.data() + 1);
+//     pubkeybytes.push_back(pubkeybytes[0] == 0x02 ? 0 : 1);
+//     pubkeybytes.push_back(0x0);
+//     ge.deserialize(pubkeybytes.data() + 1);
+    
+    ge.deserialize(pubKey.data);
     
     return ge;
 }
@@ -109,17 +113,29 @@ CPubKey PaymentAddress::getSendECKey(Scalar s)
     LogPrintf("getSendECKey:ecG= %s\n", ecG.GetHex());
     LogPrintf("getSendECKey:buffersize required = %d\n", ecG.memoryRequired());
 
-    unsigned char buffer[34] = {0};
-    unsigned char* bufferflow = ecG.serialize(buffer);
+//     unsigned char buffer[34] = {0};
+    secp256k1_pubkey pubKey ;
+    ecG.serialize(pubKey.data);
     
-    LogPrintf("getSendECKey:buffer = %s\n", HexStr(&buffer[0], bufferflow));
+    vector<unsigned char> pubkey_vch  = ecG.getvch();
+    
+    
+    vector<unsigned char> pubkey_bytes(33);
+    secp256k1_context *context = OpenSSLContext::get_context();
+    size_t pubkey_size = 33;
+    secp256k1_ec_pubkey_serialize(context, pubkey_bytes.data(), &pubkey_size, &pubKey, SECP256K1_EC_COMPRESSED);
+    
+    
+    LogPrintf("getSendECKey:pubkey_bytes = %s\n", HexStr(pubkey_bytes));
     
     CPubKey pkey;
-    vector<unsigned char> pkeybytes(33);
-    pkeybytes[0] = buffer[32] == 0 ? 0x02 : 0x03;
-    Bip47_common::arraycopy(buffer, 0, pkeybytes, 1, 32);
-    pkey.Set(pkeybytes.begin(), pkeybytes.end());
-    LogPrintf("Validate getSendECKey is %s\n", pkey.IsValid()? "true":"false");
+    pkey.Set(pubkey_bytes.begin(), pubkey_bytes.end());
+    
+//     vector<unsigned char> pkeybytes(33);
+//     pkeybytes[0] = buffer[32] == 0 ? 0x02 : 0x03;
+//     Bip47_common::arraycopy(buffer, 0, pkeybytes, 1, 32);
+//     pkey.Set(pkeybytes.begin(), pkeybytes.end());
+//     LogPrintf("Validate getSendECKey is %s\n", pkey.IsValid()? "true":"false");
 
     return pkey;
 }
