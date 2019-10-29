@@ -106,18 +106,7 @@ GroupElement PaymentAddress::getECPoint(bool isMine) {
     serializedGe.push_back(0x0);
     ge.deserialize(&serializedGe[0]);
     
-//     secp256k1_pubkey_load(context, &ge, &pubKey);
-    
-    
-    
-//     GroupElement Ge((void*)&ge);
-    
-//     pubkeybytes.push_back(pubkeybytes[0] == 0x02 ? 0 : 1);
-//     pubkeybytes.push_back(0x0);
-//     ge.deserialize(pubkeybytes.data() + 1);
-    
-//     ge.deserialize(pubKey.data);
-    
+
     return ge;
 }
 
@@ -151,6 +140,7 @@ CPubKey PaymentAddress::getSendECKey(Scalar s)
 
 //     unsigned char buffer[34] = {0};
     secp256k1_pubkey pubKey ;
+    
     ecG.serialize(pubKey.data);
     
     vector<unsigned char> pubkey_vch  = ecG.getvch();
@@ -163,6 +153,8 @@ CPubKey PaymentAddress::getSendECKey(Scalar s)
     
     
     LogPrintf("getSendECKey:pubkey_bytes = %s size = %d\n", HexStr(pubkey_bytes), pubkey_size);
+    
+    
     
     CPubKey pkey;
     pkey.Set(pubkey_bytes.begin(), pubkey_bytes.end());
