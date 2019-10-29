@@ -94,9 +94,9 @@ GroupElement PaymentAddress::getECPoint(bool isMine) {
     
     
     
-    secp256k1_pubkey pubKey ;
-    secp256k1_context *context = OpenSSLContext::get_context();
-    secp256k1_ec_pubkey_parse(context, &pubKey, pubkeybytes.data(), pubkeybytes.size());
+//     secp256k1_pubkey pubKey ;
+//     secp256k1_context *context = OpenSSLContext::get_context();
+//     secp256k1_ec_pubkey_parse(context, &pubKey, pubkeybytes.data(), pubkeybytes.size());
     
     GroupElement ge;
     
@@ -182,29 +182,34 @@ CPubKey PaymentAddress::getReceiveECPubKey(Scalar s)
     LogPrintf("getSendECKey:ecG= %s\n", ecG.GetHex());
     LogPrintf("getSendECKey:buffersize required = %d\n", ecG.memoryRequired());
 
-//     unsigned char buffer[34] = {0};
+    unsigned char buffer[34] = {0};
+    
+//     ecG.serialize(buffer);
+    
     secp256k1_pubkey pubKey ;
-    ecG.serialize(pubKey.data);
     
     vector<unsigned char> pubkey_vch  = ecG.getvch();
+    pubkey_vch.pop_back();
+    unsigned char header_char = pubkey_vch[pubkey_vch.size()-1] == 0 ? 0x02 : 0x03;
+    pubkey_vch.pop_back();
+    pubkey_vch.insert(pubkey_vch.begin(), header_char);
     
+//     pubkey_vch.insert(pubkey_vch.begin(), pubkey_vch[32] == 0? 0x2 : 0x3);
+//     pubkey_vch.pop_back();
     
-    vector<unsigned char> pubkey_bytes(33);
-    secp256k1_context *context = OpenSSLContext::get_context();
-    size_t pubkey_size = 33;
-    secp256k1_ec_pubkey_serialize(context, pubkey_bytes.data(), &pubkey_size, &pubKey, SECP256K1_EC_COMPRESSED);
+//     memset(pubKey.data, 0, 64);
+//     Bip47_common::arraycopy(pubkey_vch, 1, pubKey.data, 0, pubkey_vch.size() - 1);
     
+//     vector<unsigned char> pubkey_bytes(33);
+//     secp256k1_context *context = OpenSSLContext::get_context();
+//     size_t pubkey_size = 33;
+//     secp256k1_ec_pubkey_serialize(context, pubkey_bytes.data(), &pubkey_size, &pubKey, SECP256K1_EC_COMPRESSED);
     
-    LogPrintf("getSendECKey:pubkey_bytes = %s size = %d\n", HexStr(pubkey_bytes), pubkey_size);
+    LogPrintf("getSendECKey:pubkey_bytes = %s size = %d\n", HexStr(pubkey_vch), pubkey_vch.size());
     
     CPubKey pkey;
-    pkey.Set(pubkey_bytes.begin(), pubkey_bytes.end());
+    pkey.Set(pubkey_vch.begin(), pubkey_vch.end());
     
-    
-//     vector<unsigned char> pkeybytes(33);
-//     pkeybytes[0] = buffer[32] == 0 ? 0x02 : 0x03;
-//     Bip47_common::arraycopy(buffer, 0, pkeybytes, 1, 32);
-//     pkey.Set(pkeybytes.begin(), pkeybytes.end());
     LogPrintf("Validate getSendECKey is %s\n", pkey.IsValid()? "true":"false");
 
     return pkey;
@@ -258,16 +263,5 @@ bool PaymentAddress::SelfTest(CWallet* pwallet)
         return true;
     return false;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
