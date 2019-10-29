@@ -4199,6 +4199,23 @@ UniValue SecretPointCheck(const UniValue& params, bool fHelp)
     
 }
 
+UniValue PaymentAddressSelfCheck(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    
+    if(PaymentAddress::SelfTest(pwalletMain))
+    {
+        return "true";
+    }
+    else
+    {
+        return "false";
+    }
+}
+
 UniValue validatepcode(const UniValue& params, bool fHelp)
 {
 
@@ -4514,6 +4531,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "getreceivedbypcode",     &getreceivedbypcode,     false },
     { "wallet",             "getPaymentCodeFromNotificationTx",     &getPaymentCodeFromNotificationTx,     false },
     { "wallet",             "SecretPointCheck",     &SecretPointCheck,     false },
+    { "wallet",             "PaymentAddressSelfCheck",     &PaymentAddressSelfCheck,     false },
     { "wallet",              "validatepcode",       &validatepcode,      true  },
     
 };

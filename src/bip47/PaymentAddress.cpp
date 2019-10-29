@@ -1,6 +1,8 @@
 #include "PaymentAddress.h"
 #include "PaymentCode.h"
 #include "bip47_common.h"
+#include "Bip47Util.h"
+
 
 
 PaymentAddress::PaymentAddress()
@@ -56,6 +58,11 @@ CKey PaymentAddress::getReceiveECKey()
     return getReceiveECKey(getSecretPoint());
 }
 
+CPubKey PaymentAddress::getReceiveECPubKey()
+{
+    return getReceiveECPubKey(getSecretPoint());
+}
+
 GroupElement PaymentAddress::get_sG()
 {
     return get_sG(getSecretPoint());
@@ -69,23 +76,52 @@ Scalar PaymentAddress::getSecretPoint() {
     return secretPoint();
 }
 
-GroupElement PaymentAddress::getECPoint() {
-    vector<unsigned char> pubkeybytes = paymentCode.addressAt(index).getPubKey();
+
+// GetECPoint from the public keys derived in PaymentCode 
+GroupElement PaymentAddress::getECPoint(bool isMine) {
+    
+    
+    
+    vector<unsigned char> pubkeybytes;
+    if(isMine)
+    {
+        pubkeybytes = pwalletMain->getBip47Account(0).getPaymentCode().addressAt(index).getPubKey();
+    }
+    else
+    {
+        pubkeybytes = paymentCode.addressAt(index).getPubKey();    
+    }
+    
+    
     
     secp256k1_pubkey pubKey ;
     secp256k1_context *context = OpenSSLContext::get_context();
-    secp256k1_ec_pubkey_parse(context,&pubKey, pubkeybytes.data(), pubkeybytes.size());
+    secp256k1_ec_pubkey_parse(context, &pubKey, pubkeybytes.data(), pubkeybytes.size());
     
     GroupElement ge;
+    
+    std::vector<unsigned char> serializedGe;
+    std::copy(pubkeybytes.begin() + 1, pubkeybytes.begin() + 33, std::back_inserter(serializedGe));
+    serializedGe.push_back(pubkeybytes[0] == 0x02 ? 0 : 1);
+    serializedGe.push_back(0x0);
+    ge.deserialize(&serializedGe[0]);
+    
+//     secp256k1_pubkey_load(context, &ge, &pubKey);
+    
+    
+    
+//     GroupElement Ge((void*)&ge);
     
 //     pubkeybytes.push_back(pubkeybytes[0] == 0x02 ? 0 : 1);
 //     pubkeybytes.push_back(0x0);
 //     ge.deserialize(pubkeybytes.data() + 1);
     
-    ge.deserialize(pubKey.data);
+//     ge.deserialize(pubKey.data);
     
     return ge;
 }
+
+
 
 std::vector<unsigned char> PaymentAddress::hashSharedSecret() {
 
@@ -101,6 +137,47 @@ GroupElement PaymentAddress::get_sG(Scalar s) {
 }
 
 CPubKey PaymentAddress::getSendECKey(Scalar s)
+{
+    LogPrintf("getSendECKey:SecretPoint = %s\n", s.GetHex());
+    
+    GroupElement ecPoint = getECPoint(true);
+    LogPrintf("getSendECKey:ecPoint = %s\n", ecPoint.GetHex());
+    
+    GroupElement sG = get_sG(s);
+    LogPrintf("getSendECKey:sG = %s\n", sG.GetHex());
+    GroupElement ecG = ecPoint + sG;
+    LogPrintf("getSendECKey:ecG= %s\n", ecG.GetHex());
+    LogPrintf("getSendECKey:buffersize required = %d\n", ecG.memoryRequired());
+
+//     unsigned char buffer[34] = {0};
+    secp256k1_pubkey pubKey ;
+    ecG.serialize(pubKey.data);
+    
+    vector<unsigned char> pubkey_vch  = ecG.getvch();
+    
+    
+    vector<unsigned char> pubkey_bytes(33);
+    secp256k1_context *context = OpenSSLContext::get_context();
+    size_t pubkey_size = 33;
+    secp256k1_ec_pubkey_serialize(context, pubkey_bytes.data(), &pubkey_size, &pubKey, SECP256K1_EC_COMPRESSED);
+    
+    
+    LogPrintf("getSendECKey:pubkey_bytes = %s size = %d\n", HexStr(pubkey_bytes), pubkey_size);
+    
+    CPubKey pkey;
+    pkey.Set(pubkey_bytes.begin(), pubkey_bytes.end());
+    
+    
+//     vector<unsigned char> pkeybytes(33);
+//     pkeybytes[0] = buffer[32] == 0 ? 0x02 : 0x03;
+//     Bip47_common::arraycopy(buffer, 0, pkeybytes, 1, 32);
+//     pkey.Set(pkeybytes.begin(), pkeybytes.end());
+    LogPrintf("Validate getSendECKey is %s\n", pkey.IsValid()? "true":"false");
+
+    return pkey;
+}
+
+CPubKey PaymentAddress::getReceiveECPubKey(Scalar s)
 {
     LogPrintf("getSendECKey:SecretPoint = %s\n", s.GetHex());
     
@@ -164,6 +241,30 @@ secp_primitives::Scalar PaymentAddress::secretPoint()
 {
     return secp_primitives::Scalar(hashSharedSecret().data());
 
+}
+
+bool PaymentAddress::SelfTest(CWallet* pwallet)
+{
+    
+    PaymentCode toPcode("PM8TJK7t44xGE2DSbFGCk2wCypTzeq3L5i5r5iUGyNruaFLMCshtANUiBN1d9LCyQ9JrfDt3LFwRPSRkWPFBJAT7kdJgCaLDc3kQpQuwEVWxa6UmpR64");
+    
+    PaymentAddress payaddr = BIP47Util::getPaymentAddress(toPcode, 0, pwallet->getBip47Account(0).keyPrivAt(0));
+    
+    CExtPubKey extPubkey = pwallet->getBip47Account(0).keyAt(0);
+    CExtKey extKey = pwallet->getBip47Account(0).keyPrivAt(0);
+    CExtPubKey neutPubkey = extKey.Neuter();
+    
+    LogPrintf("extPubkey = %s\nneutPubkey = %s\n", extPubkey.pubkey.GetHash().GetHex(), neutPubkey.pubkey.GetHash().GetHex());
+    
+    
+    CPubKey pubkey = payaddr.getReceiveECPubKey();
+    CBitcoinAddress addr(pubkey.GetID());
+    LogPrintf("Self Test Address get is %s\n", addr.ToString());
+    
+    CKey key = payaddr.getReceiveECKey();
+    if (key.VerifyPubKey(pubkey))
+        return true;
+    return false;
 }
 
 

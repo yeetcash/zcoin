@@ -38,6 +38,8 @@ public:
     
     CPubKey getSendECKey();
     
+    CPubKey getReceiveECPubKey();
+    
     CKey getReceiveECKey();
     
     GroupElement get_sG();
@@ -46,11 +48,11 @@ public:
     
     Scalar getSecretPoint();
     
-    GroupElement getECPoint();
-    
-    
+    GroupElement getECPoint(bool isMine = false);
     
     std::vector<unsigned char> hashSharedSecret();
+    
+    static bool SelfTest(CWallet* pwallet);
     
 private:
     
@@ -63,6 +65,8 @@ private:
     CPubKey getSendECKey(Scalar s);
 
     CKey getReceiveECKey(Scalar s);
+    
+    CPubKey getReceiveECPubKey(Scalar s);
 
     
     
