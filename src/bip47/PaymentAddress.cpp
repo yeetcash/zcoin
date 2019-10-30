@@ -101,7 +101,7 @@ GroupElement PaymentAddress::getECPoint(bool isMine) {
     GroupElement ge;
     
     std::vector<unsigned char> serializedGe;
-    std::copy(pubkeybytes.begin() + 1, pubkeybytes.begin() + 33, std::back_inserter(serializedGe));
+    std::copy(pubkeybytes.begin() + 1, pubkeybytes.end(), std::back_inserter(serializedGe));
     serializedGe.push_back(pubkeybytes[0] == 0x02 ? 0 : 1);
     serializedGe.push_back(0x0);
     ge.deserialize(&serializedGe[0]);
@@ -240,6 +240,44 @@ secp_primitives::Scalar PaymentAddress::secretPoint()
 
 }
 
+
+/**
+ * @selfTest
+ * 
+ * Glossary Of Definitions:
+ * @incoming_address
+ * 
+ * b`  .pubkey : The incoming address is the Zcoin address with which the receiver expects to be paid.
+ * 
+ * @outgoing_address
+ * 
+ * B` : The outgoing address is the Zcoin address which the sender is going to send a transaction,
+ *   with the expectation that the receiver will get this deposit.
+ * 
+ * 
+ * This function is the one of UnitTest that can able to check the PaymentAddress generate incoming and outgoing addresses derived between alice and bob payment codes.
+ * 
+ * Calculate the New Public Key as    B` = B + Gs
+ * Calcualte the New Private Key as   b` = b + s
+ * 
+ * B is pubkey derived from payment code of reciever (This shared from bob to Alice via payment code)
+ * b is the private key dervived from payment code of reciever (This is only bob knows)
+ * 
+ * s is Shared Secret between alice and bob    calcaulted via Bob pubkey and Alice private or Bob private key and alice public key
+ * 
+ * G is the generator point of EC params
+ * 
+ * Now the checkable point is that
+ * 
+ * New found public key B` is verifiable from new found private key b`
+ * 
+ * key.VerifyPubKey(pubkey)
+ * 
+ * @Status false
+ * @expect result true
+ *  
+ * */
+
 bool PaymentAddress::SelfTest(CWallet* pwallet)
 {
     
@@ -262,6 +300,7 @@ bool PaymentAddress::SelfTest(CWallet* pwallet)
     if (key.VerifyPubKey(pubkey))
         return true;
     return false;
+    
 }
 
 
