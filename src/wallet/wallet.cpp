@@ -1769,7 +1769,7 @@ void CWallet::processNotificationTransaction(CTransaction tx)
     }
     else
     {
-
+        LogPrintf("Error decoding Payment Code in Tx\n");
     }
 }
 
@@ -1781,6 +1781,44 @@ std::string CWallet::getCurrentOutgoingAddress(Bip47PaymentChannel paymentChanne
     CBitcoinAddress outAddress(outgoingKey.GetID());
     return outAddress.ToString();
 }
+
+bool CWallet::importKey(CKey imKey, bool fRescan)
+{
+    if(!imKey.IsValid()) {
+        LogPrintf("Import Key Invalied Error\n");
+        return false;
+    }
+    
+    CPubKey pubkey = imKey.GetPubKey();
+    assert(imKey.VerifyPubKey(pubkey));
+    CKeyID vchAddress = pubkey.GetID();
+    {
+        MarkDirty();
+        SetAddressBook(vchAddress, "Bip47Receive", "receive");
+        
+        if(HaveKey(vchAddress))
+        {
+            LogPrintf("Key Already Imported!\n");
+            return false;
+        }
+        
+        mapKeyMetadata[vchAddress].nCreateTime = 1;
+        if(!AddKeyPubKey(imKey, pubkey))
+        {
+            LogPrintf("AddKeyPubKey error while importkey\n");
+            return false;
+        }
+        nTimeFirstKey = 1;
+        if(fRescan) {
+            ScanForWalletTransactions(chainActive.Genesis(), true);
+        }
+        
+    }
+    return true;
+    
+}
+
+
 
 int64_t CWalletTx::GetTxTime() const {
     int64_t n = nTimeSmart;

@@ -121,55 +121,14 @@ std::vector<unsigned char> PaymentAddress::hashSharedSecret() {
 }
 
 GroupElement PaymentAddress::get_sG(Scalar s) {
-    sigma::Params* _ec_params = sigma::Params::get_default();
-    return _ec_params->get_g() * s;
+
+    GroupElement g = GroupElement("55066263022277343669578718895168534326250603453777594175500187360389116729240",
+                             "32670510020758816978083085130507043184471273380659243275938904335757337482424");
+    
+    return g * s;
 }
 
 CPubKey PaymentAddress::getSendECKey(Scalar s)
-{
-    LogPrintf("getSendECKey:SecretPoint = %s\n", s.GetHex());
-    
-    GroupElement ecPoint = getECPoint(true);
-    LogPrintf("getSendECKey:ecPoint = %s\n", ecPoint.GetHex());
-    
-    GroupElement sG = get_sG(s);
-    LogPrintf("getSendECKey:sG = %s\n", sG.GetHex());
-    GroupElement ecG = ecPoint + sG;
-    LogPrintf("getSendECKey:ecG= %s\n", ecG.GetHex());
-    LogPrintf("getSendECKey:buffersize required = %d\n", ecG.memoryRequired());
-
-//     unsigned char buffer[34] = {0};
-    secp256k1_pubkey pubKey ;
-    
-    ecG.serialize(pubKey.data);
-    
-    vector<unsigned char> pubkey_vch  = ecG.getvch();
-    
-    
-    vector<unsigned char> pubkey_bytes(33);
-    secp256k1_context *context = OpenSSLContext::get_context();
-    size_t pubkey_size = 33;
-    secp256k1_ec_pubkey_serialize(context, pubkey_bytes.data(), &pubkey_size, &pubKey, SECP256K1_EC_COMPRESSED);
-    
-    
-    LogPrintf("getSendECKey:pubkey_bytes = %s size = %d\n", HexStr(pubkey_bytes), pubkey_size);
-    
-    
-    
-    CPubKey pkey;
-    pkey.Set(pubkey_bytes.begin(), pubkey_bytes.end());
-    
-    
-//     vector<unsigned char> pkeybytes(33);
-//     pkeybytes[0] = buffer[32] == 0 ? 0x02 : 0x03;
-//     Bip47_common::arraycopy(buffer, 0, pkeybytes, 1, 32);
-//     pkey.Set(pkeybytes.begin(), pkeybytes.end());
-    LogPrintf("Validate getSendECKey is %s\n", pkey.IsValid()? "true":"false");
-
-    return pkey;
-}
-
-CPubKey PaymentAddress::getReceiveECPubKey(Scalar s)
 {
     LogPrintf("getSendECKey:SecretPoint = %s\n", s.GetHex());
     
@@ -182,28 +141,40 @@ CPubKey PaymentAddress::getReceiveECPubKey(Scalar s)
     LogPrintf("getSendECKey:ecG= %s\n", ecG.GetHex());
     LogPrintf("getSendECKey:buffersize required = %d\n", ecG.memoryRequired());
 
-    unsigned char buffer[34] = {0};
-    
-//     ecG.serialize(buffer);
-    
-    secp256k1_pubkey pubKey ;
-    
     vector<unsigned char> pubkey_vch  = ecG.getvch();
     pubkey_vch.pop_back();
     unsigned char header_char = pubkey_vch[pubkey_vch.size()-1] == 0 ? 0x02 : 0x03;
     pubkey_vch.pop_back();
     pubkey_vch.insert(pubkey_vch.begin(), header_char);
     
-//     pubkey_vch.insert(pubkey_vch.begin(), pubkey_vch[32] == 0? 0x2 : 0x3);
-//     pubkey_vch.pop_back();
+    LogPrintf("getSendECKey:pubkey_bytes = %s size = %d\n", HexStr(pubkey_vch), pubkey_vch.size());
     
-//     memset(pubKey.data, 0, 64);
-//     Bip47_common::arraycopy(pubkey_vch, 1, pubKey.data, 0, pubkey_vch.size() - 1);
+    CPubKey pkey;
+    pkey.Set(pubkey_vch.begin(), pubkey_vch.end());
     
-//     vector<unsigned char> pubkey_bytes(33);
-//     secp256k1_context *context = OpenSSLContext::get_context();
-//     size_t pubkey_size = 33;
-//     secp256k1_ec_pubkey_serialize(context, pubkey_bytes.data(), &pubkey_size, &pubKey, SECP256K1_EC_COMPRESSED);
+    LogPrintf("Validate getSendECKey is %s\n", pkey.IsValid()? "true":"false");
+
+    return pkey;
+}
+
+CPubKey PaymentAddress::getReceiveECPubKey(Scalar s)
+{
+    LogPrintf("getSendECKey:SecretPoint = %s\n", s.GetHex());
+    
+    GroupElement ecPoint = getECPoint(true);
+    LogPrintf("getSendECKey:ecPoint = %s\n", ecPoint.GetHex());
+    
+    GroupElement sG = get_sG(s);
+    LogPrintf("getSendECKey:sG = %s\n", sG.GetHex());
+    GroupElement ecG = ecPoint + sG;
+    LogPrintf("getSendECKey:ecG= %s\n", ecG.GetHex());
+    LogPrintf("getSendECKey:buffersize required = %d\n", ecG.memoryRequired());
+
+    vector<unsigned char> pubkey_vch  = ecG.getvch();
+    pubkey_vch.pop_back();
+    unsigned char header_char = pubkey_vch[pubkey_vch.size()-1] == 0 ? 0x02 : 0x03;
+    pubkey_vch.pop_back();
+    pubkey_vch.insert(pubkey_vch.begin(), header_char);
     
     LogPrintf("getSendECKey:pubkey_bytes = %s size = %d\n", HexStr(pubkey_vch), pubkey_vch.size());
     

@@ -50,8 +50,9 @@ void Bip47PaymentChannel::generateKeys(CWallet *bip47Wallet) {
     {
         PaymentCode pcode(paymentCode);
         PaymentAddress paddr = BIP47Util::getReceiveAddress(bip47Wallet, pcode, i);
-        paddr.getReceiveECKey();
-        CKey kkk;
+        CKey newgenKey = paddr.getReceiveECKey();
+        bip47Wallet->importKey(newgenKey);
+        
         
 //         paddr.getReceiveECKey()
     }
