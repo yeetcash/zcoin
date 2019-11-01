@@ -509,6 +509,7 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
 
         // If channel already sent notifcation transaction.
         if (channel->isNotificationTransactionSent()) {
+            LogPrintf("Payment Notification Transaction Already Sent\n");
             isNotificationTx = false;
             std::string addressTo = wallet->getCurrentOutgoingAddress(*channel);
 
@@ -525,6 +526,7 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         }
         else
         {
+            LogPrintf("Payment Notification Transaction Still Not Sent\n");
             isNotificationTx = true;
 
             toBip47Account.SetPaymentCodeString(rcp.address.toStdString());
@@ -709,7 +711,7 @@ WalletModel::SendCoinsReturn WalletModel::sendPCodeCoins(WalletModelTransaction 
         // Add to payment channel return true or false;
         wallet->addToBip47PaymentChannel(pchannel);
         Bip47PaymentChannel* channel = wallet->getPaymentChannelFromPaymentCode(pcodestr);
-        if(channel->isNotificationTransactionSent())
+        if(!channel->isNotificationTransactionSent())
         {
             channel->setStatusSent();
         }

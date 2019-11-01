@@ -1759,29 +1759,35 @@ void CWallet::saveBip47PaymentChannelData()
 
 bool CWallet::addToBip47PaymentChannel(Bip47PaymentChannel paymentChannel)
 {
-    if (m_Bip47channels.count(paymentChannel.getPaymentCode()) > 0) 
+    if (m_Bip47channels.count(paymentChannel.getPaymentCode()) > 0)
     {
         std::map<string, Bip47PaymentChannel>::iterator it = m_Bip47channels.find(paymentChannel.getPaymentCode());
         it->second.setLabel(paymentChannel.getLabel());
         return false;
     }
-    
+
     m_Bip47channels.insert(make_pair(paymentChannel.getPaymentCode(), paymentChannel));
     return true;
-    
+
 }
 
 Bip47PaymentChannel* CWallet::getPaymentChannelFromPaymentCode(std::string pcodestr)
 {
-    if (m_Bip47channels.count(pcodestr) > 0) 
+    if (m_Bip47channels.count(pcodestr) > 0)
     {
-       std::map<string, Bip47PaymentChannel>::iterator it = m_Bip47channels.find(pcodestr);
-       return &it->second;
+        LogPrintf("Found Pcode %s in Bip47Channels\n", pcodestr);
+        std::map<string, Bip47PaymentChannel>::iterator it = m_Bip47channels.find(pcodestr);
+        return &it->second;
     }
     else
     {
+        LogPrintf("Not Found Found Pcode %s in Bip47Channels\n", pcodestr);
         std::pair<std::map<string, Bip47PaymentChannel>::iterator, bool> ret;
         ret = m_Bip47channels.insert(make_pair(pcodestr, Bip47PaymentChannel(pcodestr)));
+        if(ret.second == false)
+        {
+            LogPrintf("Insert New PaymentCode to Bip47Channels false");
+        }
         return &ret.first->second;
     }
 }
@@ -1818,20 +1824,20 @@ bool CWallet::importKey(CKey imKey, bool fRescan)
         LogPrintf("Import Key Invalied Error\n");
         return false;
     }
-    
+
     CPubKey pubkey = imKey.GetPubKey();
     assert(imKey.VerifyPubKey(pubkey));
     CKeyID vchAddress = pubkey.GetID();
     {
         MarkDirty();
         SetAddressBook(vchAddress, "Bip47Receive", "receive");
-        
+
         if(HaveKey(vchAddress))
         {
             LogPrintf("Key Already Imported!\n");
             return false;
         }
-        
+
         mapKeyMetadata[vchAddress].nCreateTime = 1;
         if(!AddKeyPubKey(imKey, pubkey))
         {
@@ -1842,10 +1848,10 @@ bool CWallet::importKey(CKey imKey, bool fRescan)
         if(fRescan) {
             ScanForWalletTransactions(chainActive.Genesis(), true);
         }
-        
+
     }
     return true;
-    
+
 }
 
 
