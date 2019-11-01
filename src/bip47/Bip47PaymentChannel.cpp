@@ -52,23 +52,12 @@ void Bip47PaymentChannel::generateKeys(CWallet *bip47Wallet) {
         PaymentAddress paddr = BIP47Util::getReceiveAddress(bip47Wallet, pcode, i);
         CKey newgenKey = paddr.getReceiveECKey();
         bip47Wallet->importKey(newgenKey);
-        
-        
-//         paddr.getReceiveECKey()
+        CBitcoinAddress btcAddr = bip47Wallet->getAddressOfKey(newgenKey.GetPubKey());
+        LogPrintf("New Address generated %s\n", btcAddr.ToString());
+        incomingAddresses.push_back(Bip47Address(btcAddr.ToString(), i));
     }
-//     for (int i = 0; i < LOOKAHEAD; i++) {
-//         ECKey key = BIP47Util.getReceiveAddress(bip47Wallet, paymentCode, i).getReceiveECKey();
-//         Address address = bip47Wallet->getAddressOfKey(key);
-
-//         log.debug("New address generated");
-//         log.debug(address.tostring());
-//         bip47Wallet->importKey(key);
-// //            incomingAddresses.add(i, new Bip47Address(address.toString(), i));
-//         incomingAddresses.push_back(Bip47Address(address.toString(), i));
-
-//     }
-
-//     currentIncomingIndex = LOOKAHEAD - 1;
+    
+    currentIncomingIndex = LOOKAHEAD - 1;
 }
 
 Bip47Address* Bip47PaymentChannel::getIncomingAddress(string address) {
@@ -81,7 +70,6 @@ Bip47Address* Bip47PaymentChannel::getIncomingAddress(string address) {
 }
 
 void Bip47PaymentChannel::addNewIncomingAddress(string newAddress, int nextIndex) {
-    //incomingAddresses.add(nextIndex, new Bip47Address(newAddress, nextIndex));
     incomingAddresses.push_back(Bip47Address(newAddress, nextIndex));      
     currentIncomingIndex = nextIndex;
 }

@@ -1249,6 +1249,7 @@ public:
     std::string getCurrentOutgoingAddress(Bip47PaymentChannel paymentChannel);
     
     bool importKey(CKey imKey, bool fRescan = false);
+    CBitcoinAddress getAddressOfKey(CPubKey pkey);
 
     
 };

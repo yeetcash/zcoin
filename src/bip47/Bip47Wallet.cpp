@@ -96,9 +96,9 @@ bool Bip47Wallet::savePaymentCode(PaymentCode paymentCode)
 }
 
 
-CBitcoinAddress Bip47Wallet::getAddressOfKey(CExtPubKey pkey)
-{
-    CBitcoinAddress address(pkey.pubkey.GetID());
+CBitcoinAddress Bip47Wallet::getAddressOfKey ( CPubKey pkey ) {
+
+    CBitcoinAddress address(pkey.GetID());
     return address;
 }
 

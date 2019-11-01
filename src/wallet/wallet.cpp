@@ -1435,6 +1435,7 @@ bool CWallet::SetHDChain(const CHDChain &chain, bool memonly) {
 }
 
 // Bip47Wallet functions
+
 void CWallet::loadBip47Wallet(CExtKey masterExtKey)
 {
     LogPrintf("Bip47Wallet Loading....\n");
@@ -1819,6 +1820,13 @@ bool CWallet::importKey(CKey imKey, bool fRescan)
 }
 
 
+CBitcoinAddress CWallet::getAddressOfKey ( CPubKey pkey ) {
+
+    CBitcoinAddress address(pkey.GetID());
+    return address;
+}
+
+// End Bip47 Wallet Functions
 
 int64_t CWalletTx::GetTxTime() const {
     int64_t n = nTimeSmart;
