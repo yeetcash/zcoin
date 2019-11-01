@@ -118,7 +118,7 @@ CAmount maxTxFee = DEFAULT_TRANSACTION_MAXFEE;
 
 CTxMemPool mempool(::minRelayTxFee);
 FeeFilterRounder filterRounder(::minRelayTxFee);
-CTxMemPool stempool(::minRelayTxFee);
+CTxPoolAggregate txpools(::minRelayTxFee);
 
 // Zcoin znode
 map <uint256, int64_t> mapRejectedBlocks GUARDED_BY(cs_main);
@@ -1278,6 +1278,16 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 {
     return AcceptToMemoryPoolWithTime(pool, state, tx, fLimitFree, pfMissingInputs, GetTime(), plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee, isCheckWalletTransaction, markZcoinSpendTransactionSerial);
 }
+
+
+bool AcceptToMemoryPool(CTxPoolAggregate& poolAggregate, CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
+                        bool* pfMissingInputs, std::list<CTransactionRef>* plTxnReplaced,
+                        bool fOverrideMempoolLimit, const CAmount nAbsurdFee, bool isCheckWalletTransaction, bool markZcoinSpendTransactionSerial) {
+    bool res = AcceptToMemoryPool(mempool, state, tx, fLimitFree, pfMissingInputs, plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee, isCheckWalletTransaction, markZcoinSpendTransactionSerial);
+    AcceptToMemoryPool(txpools.getStemTxPool(), state, tx, fLimitFree, pfMissingInputs, plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee, isCheckWalletTransaction, false);
+    return res;
+}
+
 
 /** Return transaction in txOut, and if it was found inside a block, its hash is placed in hashBlock */
 bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus::Params& consensusParams, uint256 &hashBlock, bool fAllowSlow)
@@ -2645,10 +2655,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams &chainParams) {
     znodeSync.UpdatedBlockTip(chainActive.Tip());
 
     // New best block
-    mempool.AddTransactionsUpdated(1);
-
-    // Changes to mempool should also be made to Dandelion stempool
-    stempool.AddTransactionsUpdated(1);
+    txpools.AddTransactionsUpdated(1);
 
     cvBlockChange.notify_all();
     static bool fWarned = false;
@@ -2758,7 +2765,7 @@ bool static DisconnectTip(CValidationState& state, const CChainParams& chainpara
             // Changes to mempool should also be made to Dandelion stempool.
             if (!tx.IsCoinBase()) {
                 AcceptToMemoryPool(
-                    stempool,
+                    txpools.getStemTxPool(),
                     dandelionStateDummy,
                     MakeTransactionRef(tx),
                     false, /* fLimitFree */
@@ -2771,10 +2778,7 @@ bool static DisconnectTip(CValidationState& state, const CChainParams& chainpara
                 );
             }
             if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, MakeTransactionRef(tx), false, NULL)) {
-                mempool.removeRecursive(tx);
-
-                // Changes to mempool should also be made to Dandelion stempool.
-                stempool.removeRecursive(tx);
+                txpools.removeRecursive(tx);
             } else if (mempool.exists(tx.GetHash())) {
                 vHashUpdate.push_back(tx.GetHash());
             }
@@ -2784,10 +2788,7 @@ bool static DisconnectTip(CValidationState& state, const CChainParams& chainpara
         // previously-confirmed transactions back to the mempool.
         // UpdateTransactionsFromBlock finds descendants of any transactions in this
         // block that were added back and cleans up the mempool state.
-        mempool.UpdateTransactionsFromBlock(vHashUpdate);
-
-	    // Changes to mempool should also be made to Dandelion stempool.
-        stempool.UpdateTransactionsFromBlock(vHashUpdate);
+        txpools.UpdateTransactionsFromBlock(vHashUpdate);
     }
     // Update chainActive and related variables.
     UpdateTip(pindexDelete->pprev, chainparams);
@@ -2911,9 +2912,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
 #endif
 
     // Remove conflicting transactions from the mempool.;
-    mempool.removeForBlock(blockConnecting.vtx, pindexNew->nHeight);
-    // Changes to mempool should also be made to Dandelion stempool
-    stempool.removeForBlock(blockConnecting.vtx, pindexNew->nHeight);
+    txpools.removeForBlock(blockConnecting.vtx, pindexNew->nHeight);
 
     // Update chainActive & related variables.
     UpdateTip(pindexNew, chainparams);
@@ -3187,28 +3186,21 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
     }
 
     if (fBlocksDisconnected) {
-        mempool.removeForReorg(
+        txpools.removeForReorg(
             pcoinsTip,
             chainActive.Tip()->nHeight + 1,
             STANDARD_LOCKTIME_VERIFY_FLAGS);
-	    // Changes to mempool should also be made to Dandelion stempool
-        stempool.removeForReorg(
-            pcoinsTip,
-	        chainActive.Tip()->nHeight + 1,
-	        STANDARD_LOCKTIME_VERIFY_FLAGS);
 
         LimitMempoolSize(mempool,
                          GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000,
                          GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
 
 	    // Changes to mempool should also be made to Dandelion stempool
-        LimitMempoolSize(stempool,
+        LimitMempoolSize(txpools.getStemTxPool(),
                          GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000,
                          GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
     }
-    mempool.check(pcoinsTip);
-    // Changes to mempool should also be made to Dandelion stempool
-    stempool.check(pcoinsTip);
+    txpools.check(pcoinsTip);
 
     // Callbacks/notifications for a new best chain.
     if (fInvalidFound)
@@ -3373,9 +3365,7 @@ bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, C
         // ActivateBestChain considers blocks already in chainActive
         // unconditionally valid already, so force disconnect away from it.
         if (!DisconnectTip(state, chainparams)) {
-            mempool.removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
-            // Changes to mempool should also be made to Dandelion stempool
-            stempool.removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
+            txpools.removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
             return false;
         }
     }
@@ -3383,7 +3373,7 @@ bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, C
     LimitMempoolSize(mempool, GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000, GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
 
     // Changes to mempool should also be made to Dandelion stempool
-    LimitMempoolSize(stempool, GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000, GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
+    LimitMempoolSize(txpools.getStemTxPool(), GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000, GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
 
     // The resulting new best tip may not be in setBlockIndexCandidates anymore, so
     // add it again.
@@ -3396,9 +3386,7 @@ bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, C
     }
 
     InvalidChainFound(pindex);
-    mempool.removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
-    // Changes to mempool should also be made to Dandelion stempool
-    stempool.removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
+    txpools.removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
 
     uiInterface.NotifyBlockTip(IsInitialBlockDownload(), pindex->pprev);
     return true;
@@ -4706,8 +4694,7 @@ void UnloadBlockIndex()
     chainActive.SetTip(NULL);
     pindexBestInvalid = NULL;
     pindexBestHeader = NULL;
-    mempool.clear();
-    stempool.clear();
+    txpools.clear();
     mapBlocksUnlinked.clear();
     vinfoBlockFile.clear();
     nLastBlockFile = 0;
