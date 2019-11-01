@@ -1757,6 +1757,35 @@ void CWallet::saveBip47PaymentChannelData()
     }
 }
 
+bool CWallet::addToBip47PaymentChannel(Bip47PaymentChannel paymentChannel)
+{
+    if (m_Bip47channels.count(paymentChannel.getPaymentCode()) > 0) 
+    {
+        std::map<string, Bip47PaymentChannel>::iterator it = m_Bip47channels.find(paymentChannel.getPaymentCode());
+        it->second.setLabel(paymentChannel.getLabel());
+        return false;
+    }
+    
+    m_Bip47channels.insert(make_pair(paymentChannel.getPaymentCode(), paymentChannel));
+    return true;
+    
+}
+
+Bip47PaymentChannel* CWallet::getPaymentChannelFromPaymentCode(std::string pcodestr)
+{
+    if (m_Bip47channels.count(pcodestr) > 0) 
+    {
+       std::map<string, Bip47PaymentChannel>::iterator it = m_Bip47channels.find(pcodestr);
+       return &it->second;
+    }
+    else
+    {
+        std::pair<std::map<string, Bip47PaymentChannel>::iterator, bool> ret;
+        ret = m_Bip47channels.insert(make_pair(pcodestr, Bip47PaymentChannel(pcodestr)));
+        return &ret.first->second;
+    }
+}
+
 void CWallet::processNotificationTransaction(CTransaction tx)
 {
     PaymentCode from_pcode = getPaymentCodeInNotificationTransaction (tx);

@@ -1243,6 +1243,8 @@ public:
     
     bool importBip47PaymentChannelData();
     void saveBip47PaymentChannelData();
+    bool addToBip47PaymentChannel(Bip47PaymentChannel paymentChannel);
+    Bip47PaymentChannel* getPaymentChannelFromPaymentCode(std::string pcodestr);
     
     void processNotificationTransaction(CTransaction tx);
     
