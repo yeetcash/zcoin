@@ -348,7 +348,7 @@ bool CHDMintTracker::IsMempoolSpendOurs(const std::set<uint256>& setMempool, con
     // if spend, get hash of serial
     // if matches mint.hashSerial, mark pending spend.
     for(auto& mempoolTxid : setMempool){
-        std::shared_ptr<const CTransaction> ptx = txpools.get(mempoolTxid);
+        CTransactionRef ptx = txpools.get(mempoolTxid);
         if(!ptx) {
             continue;
         }
