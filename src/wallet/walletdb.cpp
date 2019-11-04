@@ -1302,6 +1302,46 @@ bool CWalletDB::WriteCBip47HDChain(const CBip47HDChain& bip47chain) {
     return Write(std::string("bip47hdchain"), bip47chain);
 }
 
+bool CWalletDB::WriteBip47PaymentChannel(const Bip47PaymentChannel& pchannel, const string& channelId)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("Bip47PaymentChannel"), channelId), pchannel, true);
+}
+
+void CWalletDB::ListBip47PaymentChannel(std::map <string, Bip47PaymentChannel> &mPchannels)
+{
+    Dbc *pcursor = GetCursor();
+    if (!pcursor)
+        throw runtime_error("CWalletDB::ListBip47PaymentChannel() : cannot create DB cursor");
+    unsigned int fFlags = DB_SET_RANGE;
+    while (true) {
+        // Read next record
+        CDataStream ssKey(SER_DISK, CLIENT_VERSION);
+        if (fFlags == DB_SET_RANGE)
+            ssKey << make_pair(string("Bip47PaymentChannel"), string(""));
+        CDataStream ssValue(SER_DISK, CLIENT_VERSION);
+        int ret = ReadAtCursor(pcursor, ssKey, ssValue, fFlags);
+        fFlags = DB_NEXT;
+        if (ret == DB_NOTFOUND)
+            break;
+        else if (ret != 0) {
+            pcursor->close();
+            throw runtime_error("CWalletDB::ListBip47PaymentChannel() : error scanning DB");
+        }
+        // Unserialize
+        string strType;
+        ssKey >> strType;
+        if (strType != "Bip47PaymentChannel")
+            break;
+        std::string value;
+        ssKey >> value;
+        Bip47PaymentChannel pchannel;
+        ssValue >> pchannel;
+        mPchannels.insert(make_pair(value, pchannel));
+    }
+    pcursor->close();
+}
+
 bool CWalletDB::ReadZerocoinCount(int32_t& nCount)
 {
     return Read(string("dzc"), nCount);

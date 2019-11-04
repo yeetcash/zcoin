@@ -4161,7 +4161,7 @@ UniValue getPaymentCodeFromNotificationTx(const UniValue& params, bool fHelp)
             if(needsSaving)
             {
                 LogPrintf("saveBip47PaymentChannelData\n");
-                pwalletMain->saveBip47PaymentChannelData();
+                pwalletMain->saveBip47PaymentChannelData(pcode.toString());
             }
             return pcode.toString();
         }

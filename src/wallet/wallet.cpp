@@ -1439,6 +1439,10 @@ bool CWallet::SetHDChain(const CHDChain &chain, bool memonly) {
 void CWallet::loadBip47Wallet(CExtKey masterExtKey)
 {
     LogPrintf("Bip47Wallet Loading....\n");
+    
+    CWalletDB(bip47WalletFile, "cr+").ListBip47PaymentChannel(this->m_Bip47channels);
+    
+    
     deriveBip47Accounts(masterExtKey);
     CBitcoinAddress notificationAddress = getBip47Account(0).getNotificationAddress();
     CScript notificationScript = GetScriptForDestination(notificationAddress.Get());
@@ -1740,20 +1744,29 @@ void CWallet::deriveBip47Accounts(CExtKey masterKey)
 
 bool CWallet::importBip47PaymentChannelData()
 {
+    CWalletDB walletdb(bip47WalletFile, "r+", false);
+    walletdb.ListBip47PaymentChannel(m_Bip47channels);
     return true;
 }
 
-void CWallet::saveBip47PaymentChannelData()
+void CWallet::saveBip47PaymentChannelData(string pchannelId)
 {
     try {
         CWalletDB walletdb(bip47WalletFile, "r+", false);
-
-        // @todo Save Current channels map to file
-//         m_Bip47channels
+        std::map<string, Bip47PaymentChannel>::iterator it = m_Bip47channels.find(pchannelId);
+        if(it != m_Bip47channels.end())
+        {
+            LogPrintf("Save PaymentChannel %s\n", pchannelId);
+            walletdb.WriteBip47PaymentChannel(it->second, pchannelId);
+        }
+        else
+        {
+            LogPrintf("Cannot find PaymentChannel %s in Wallet\n", pchannelId);
+        }
 
 
     } catch(std::exception &e) {
-
+        LogPrintf("Error %s\n", e.what());
     }
 }
 
@@ -1800,7 +1813,7 @@ void CWallet::processNotificationTransaction(CTransaction tx)
         bool needsSaving = savePaymentCode(from_pcode);
         if(needsSaving)
         {
-            saveBip47PaymentChannelData();
+            saveBip47PaymentChannelData(from_pcode.toString());
         }
     }
     else

@@ -30,6 +30,8 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "bip47/Bip47PaymentChannel.h"
+
 static const bool DEFAULT_FLUSHWALLET = true;
 
 class CAccount;
@@ -331,6 +333,12 @@ public:
 
     //! write the bip47hdchain model (external chain child index counter)
     bool WriteCBip47HDChain(const CBip47HDChain& bip47chain);
+    
+    // @bip47 channel data write
+    bool WriteBip47PaymentChannel(const Bip47PaymentChannel& pchannel, const string& channelId);
+    
+    void ListBip47PaymentChannel(std::map<string, Bip47PaymentChannel> &mPchannels);
+    
     bool WritePaymentChannelData();
 
 private:
