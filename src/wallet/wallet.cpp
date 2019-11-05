@@ -1447,7 +1447,7 @@ void CWallet::loadBip47Wallet(CExtKey masterExtKey)
 {
     LogPrintf("Bip47Wallet Loading....\n");
     
-    CWalletDB(bip47WalletFile, "cr+").ListBip47PaymentChannel(this->m_Bip47channels);
+//     CWalletDB(bip47WalletFile, "cr+").ListBip47PaymentChannel(this->m_Bip47channels);
     
     
     deriveBip47Accounts(masterExtKey);

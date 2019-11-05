@@ -45,6 +45,8 @@ PaymentcodePage::PaymentcodePage(const PlatformStyle *platformStyle, QWidget *pa
     QString notificationAddress = QString::fromStdString(std::string("Notification Address is ") + pwalletMain->getNotifiactionAddress());
     ui->paymentcodeLabel->setToolTip(notificationAddress);
     
+    connect(ui->copyPaymentcodeButton, SIGNAL(clicked()), this, SLOT(copy_button_clicked()));
+    
 
 
 #ifdef USE_QRCODE
@@ -94,6 +96,9 @@ PaymentcodePage::~PaymentcodePage()
 }
 
 void PaymentcodePage::copy_button_clicked() {
+//     QMessageBox::information(this, tr("Success"),
+//         tr("copy_button_clicked"),
+//         QMessageBox::Ok, QMessageBox::Ok);
     GUIUtil::setClipboard(ui->paymentcodeLabel->toPlainText());
 }
 
