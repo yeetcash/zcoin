@@ -722,6 +722,7 @@ WalletModel::SendCoinsReturn WalletModel::sendPCodeCoins(WalletModelTransaction 
             channel->incrementOutgoingIndex();
             
         }
+        wallet->saveBip47PaymentChannelData(pcodestr);
 
         Q_EMIT coinsSent(wallet, rcp, transaction_array);
     }

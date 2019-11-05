@@ -1237,6 +1237,7 @@ public:
     std::string getNotifiactionAddress();
 
     std::string getPaymentCode();
+    std::string getPaymentCodeForAddress(std::string address);
     
     void deriveBip47Accounts(std::vector<unsigned char> hd_seed);
     void deriveBip47Accounts(CExtKey masterKey);
@@ -1244,6 +1245,7 @@ public:
     bool importBip47PaymentChannelData();
     void saveBip47PaymentChannelData(string pchannelId);
     bool addToBip47PaymentChannel(Bip47PaymentChannel paymentChannel);
+    bool generateNewBip47IncomingAddress(string address);
     Bip47PaymentChannel* getPaymentChannelFromPaymentCode(std::string pcodestr);
     
     void processNotificationTransaction(CTransaction tx);
