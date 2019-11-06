@@ -648,23 +648,6 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         }
 
 
-        if (!BIP47Util::getScriptSigPubkey(newTx->vin[0], pubKeyBytes))
-        {
-            throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig GetPubkey error\n");
-        }
-        else
-        {
-            
-            designatedPubKey.Set(pubKeyBytes.begin(), pubKeyBytes.end());
-            LogPrintf("ScriptSigPubKey Hash %s\n", designatedPubKey.GetHash().GetHex());
-            if(!privKey.VerifyPubKey(designatedPubKey))
-            {
-                throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig designatedPubKey cannot be verified \n");
-            }
-            
-        }
-
-
         transaction.setTransactionFee(nFeeRequired);
         if (fSubtractFeeFromAmount && fCreated)
             transaction.reassignAmounts(nChangePosRet);
