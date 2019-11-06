@@ -6,6 +6,9 @@
 #ifndef BIP47ADDRESS_H
 #define BIP47ADDRESS_H
 #include "bip47_common.h"
+#include "serialize.h"
+#include "clientversion.h"
+
 class Bip47Address {
     private:
      String address;
@@ -20,6 +23,14 @@ class Bip47Address {
         bool isSeen() ;
         void setSeen(bool v_seen) ;
         virtual String toString() ;
+        
+        ADD_SERIALIZE_METHODS;
+        template <typename Stream, typename Operation>
+        inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+            READWRITE(address);
+            READWRITE(index);
+            READWRITE(seen);
+        }
 };
 
 #endif

@@ -1,8 +1,6 @@
 #include "Bip47Account.h"
 #include "PaymentCode.h"
 
-
-
 Bip47Account::Bip47Account(CExtKey &coinType, int identity) {
     accountId = identity;
     assert(coinType.Derive(prvkey,accountId | HARDENED_BIT));
@@ -18,18 +16,19 @@ Bip47Account::Bip47Account(String strPaymentCode) {
 bool Bip47Account::SetPaymentCodeString(String strPaymentCode)
 {
     if (!PaymentCode::createMasterPubKeyFromPaymentCode(strPaymentCode, this->key)) {
-        throw std::runtime_error("(CBaseChainParams *parameters, String strPaymentCode).\n");
+        throw std::runtime_error("createMasterPubKeyFromPaymentCode return false while SetPaymentCodeString.\n");
     }
 
     paymentCode = PaymentCode(strPaymentCode);
+    return true;
 }
 
 bool Bip47Account::isValid()
 {
 
     Bip47Account testAccount(paymentCode.toString());
-    vector<unsigned char> pcodePubkeybytes = testAccount.paymentCode.getPubKey();
-    vector<unsigned char> acPubkeybytes(key.pubkey.begin(), key.pubkey.end());
+    std::vector<unsigned char> pcodePubkeybytes = testAccount.paymentCode.getPubKey();
+    std::vector<unsigned char> acPubkeybytes(key.pubkey.begin(), key.pubkey.end());
 
 
     if(pcodePubkeybytes.size() != acPubkeybytes.size()) {
@@ -47,17 +46,14 @@ bool Bip47Account::isValid()
 
     CExtPubKey pubkey;
     if (!PaymentCode::createMasterPubKeyFromPaymentCode(paymentCode.toString(), pubkey)) {
-        throw std::runtime_error("(CBaseChainParams *parameters, String strPaymentCode).\n");
+        throw std::runtime_error("createMasterPubKeyFromPaymentCode Error in Function isValid.\n");
     }
 
     if(pubkey.nDepth != key.nDepth) {
         printf("key.nDepth= %d , pubkye.nDepth= %d\n", key.nDepth, pubkey.nDepth);
         std::runtime_error("nDepth invalid Bip47Account");
     }
-    // if(pubkey.nChild != key.nChild) {
-    //     printf("key.nChild= %d , pubkye.nChild= %d\n", key.nChild, pubkey.nChild);
-    //     std::runtime_error("nChild invalid Bip47Account");
-    // }
+
     if(pubkey.chaincode.GetCheapHash() != key.chaincode.GetCheapHash())
     {
         printf("mismatch chaincode\n");
@@ -77,23 +73,6 @@ bool Bip47Account::isValid()
         std::runtime_error("pubkey invalid Bip47Account");
         return false;
     }
-    // for(int i = 0; i < 4; i++) 
-    // {
-    //     if(pubkey.vchFingerprint[i] != key.vchFingerprint[i])
-    //     std::runtime_error("vchFinger Print invalid Bip47Account");
-    // }
-
-
-    // unsigned char pubkeybytes[74], keybytes[74];
-    // key.Encode(keybytes);
-    // pubkey.Encode(pubkeybytes);
-    // for(int i = 0; i < 74; i++)
-    // {
-    //     if (keybytes[i] != pubkeybytes[i])
-    //     {
-    //         return false;
-    //     }
-    // }
 
     return true;
 }
@@ -144,6 +123,21 @@ Bip47ChannelAddress Bip47Account::addressAt(int idx) {
 
 CExtPubKey Bip47Account::keyAt(int idx) {
     CExtPubKey result ;
-    key.Derive(result,idx);
+    if(!key.Derive(result,idx))
+    {
+        LogPrintf("keyAt error in Bip47Account\n");
+    }
     return result;
+}
+
+CExtKey Bip47Account::keyPrivAt(int idx)
+{
+    CExtKey result;
+    if(!prvkey.Derive(result, idx))
+    {
+        LogPrintf("keyPrivAt error in Bip47Account\n");
+    }
+    
+    return result;
+
 }

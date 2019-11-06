@@ -41,7 +41,7 @@ class PaymentCode {
     std::vector<unsigned char>& getPubKey() ;
     std::vector<unsigned char>& getChain() ;
 
-    String toString() ;
+    string toString() ;
 
     static std::vector<unsigned char> getMask(std::vector<unsigned char> sPoint, std::vector<unsigned char> oPoint) ;
     static std::vector<unsigned char> blind(std::vector<unsigned char> payload, std::vector<unsigned char> mask) ;
@@ -49,16 +49,18 @@ class PaymentCode {
     private:
     bool parse() ;
 
-    String makeV1() ;
+    string makeV1() ;
 
-    String makeV2() ;
+    string makeV2() ;
 
-    String make(int type) ;
-    static bool createMasterPubKeyFromBytes(std::vector<unsigned char> &pub, std::vector<unsigned char> &chain,CExtPubKey &masterPubKey) ;
+    string make(int type) ;
+    
     static std::vector<unsigned char> vector_xor(std::vector<unsigned char> a, std::vector<unsigned char> b) ;
     public:
     bool isValid() ;
-    static bool createMasterPubKeyFromPaymentCode(String payment_code_str,CExtPubKey &masterPubKey) ;
+    static bool createMasterPubKeyFromPaymentCode(string payment_code_str,CExtPubKey &masterPubKey) ;
+    static bool createMasterPubKeyFromBytes(std::vector<unsigned char> &pub, std::vector<unsigned char> &chain,CExtPubKey &masterPubKey) ;
+
     
 };
 #endif

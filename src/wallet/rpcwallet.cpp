@@ -27,6 +27,10 @@
 #include "walletexcept.h"
 #include "bip47/PaymentCode.h"
 #include "bip47/SecretPoint.h"
+#include "bip47/PaymentAddress.h"
+#include "bip47/Bip47Account.h"
+#include "bip47/Bip47Util.h"
+
 
 #include <znode-payments.h>
 
@@ -1924,7 +1928,17 @@ UniValue backupwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("backupwallet", "\"backup.dat\"")
         );
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    // WARNING: don't lock any mutexes here before calling into pwalletMain->BackupWallet() due to it can cause dead
+    // lock. Here is the example scenario that will cause dead lock if we lock cs_wallet before calling into
+    // pwalletMain->BackupWallet():
+    //
+    // 1. Other threads construct CWalletDB without locking cs_wallet. This is safe because CWalletDB is a thread safe.
+    // 2. This RPC get invoked. Then it lock cs_wallet before calling into pwalletMain->BackupWallet().
+    // 3. pwalletMain->BackupWallet() will loop until the CWalletDB in the step 1 closed.
+    // 4. Thread in step 1 try to lock cs_wallet while CWalletDB still open but it will wait forever due to it already
+    //    locked by this RPC.
+    //
+    // We don't need to worry about pwalletMain->BackupWallet() due to it already thread safe.
 
     string strDest = params[0].get_str();
     if (!pwalletMain->BackupWallet(strDest))
@@ -2656,6 +2670,14 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
 
 UniValue regeneratemintpool(const UniValue &params, bool fHelp) {
 
+        if (fHelp || params.size() > 0)
+	        throw runtime_error(
+       	        	"regeneratemintpool\n"
+       		        "\nIf issues exist with the keys that map to mintpool entries in the DB, this function corrects them.\n"
+                    "\nExamples:\n"
+                    + HelpExampleCli("regeneratemintpool", "")
+                    + HelpExampleRpc("regeneratemintpool", "")
+                );
     if (pwalletMain->IsLocked())
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED,
                            "Error: Please enter the wallet passphrase with walletpassphrase first.");
@@ -2678,7 +2700,7 @@ UniValue regeneratemintpool(const UniValue &params, bool fHelp) {
     bool reindexRequired = false;
 
     for (auto& mintPoolPair : listMintPool){
-        LogPrintf("regeneratemintpool: hashPubcoin: %d hashSeedMaster: %d seedId: %d nCount: %s\n", 
+        LogPrintf("regeneratemintpool: hashPubcoin: %d hashSeedMaster: %d seedId: %d nCount: %s\n",
             mintPoolPair.first.GetHex(), get<0>(mintPoolPair.second).GetHex(), get<1>(mintPoolPair.second).GetHex(), get<2>(mintPoolPair.second));
 
         oldHashPubcoin = mintPoolPair.first;
@@ -2689,7 +2711,7 @@ UniValue regeneratemintpool(const UniValue &params, bool fHelp) {
 
         if(nIndexes.first != oldHashPubcoin){
             walletdb.EraseMintPoolPair(oldHashPubcoin);
-            reindexRequired = true;    
+            reindexRequired = true;
         }
 
         if(!hasSerial || nIndexes.second != oldHashSerial){
@@ -2699,9 +2721,9 @@ UniValue regeneratemintpool(const UniValue &params, bool fHelp) {
     }
 
     if(reindexRequired)
-        return "Mintpool issue corrected. Please shutdown zcoin and restart with -reindex flag.";
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Mintpool issue corrected. Please shutdown zcoin and restart with -reindex flag.");
 
-    return "No issues with mintpool detected.";
+    return true;
 }
 
 //[zcoin]: zerocoin section
@@ -3505,7 +3527,7 @@ UniValue listsigmamints(const UniValue& params, bool fHelp) {
 
     list <CSigmaEntry> listPubcoin;
     CWalletDB walletdb(pwalletMain->strWalletFile);
-    listPubcoin = zwalletMain->GetTracker().MintsAsZerocoinEntries(false, false);
+    listPubcoin = zwalletMain->GetTracker().MintsAsSigmaEntries(false, false);
     UniValue results(UniValue::VARR);
 
     BOOST_FOREACH(const CSigmaEntry &zerocoinItem, listPubcoin) {
@@ -3591,7 +3613,7 @@ UniValue listsigmapubcoins(const UniValue& params, bool fHelp) {
 
     list<CSigmaEntry> listPubcoin;
     CWalletDB walletdb(pwalletMain->strWalletFile);
-    listPubcoin = zwalletMain->GetTracker().MintsAsZerocoinEntries(false, false);
+    listPubcoin = zwalletMain->GetTracker().MintsAsSigmaEntries(false, false);
     UniValue results(UniValue::VARR);
     listPubcoin.sort(CompSigmaHeight);
 
@@ -4154,6 +4176,13 @@ UniValue getPaymentCodeFromNotificationTx(const UniValue& params, bool fHelp)
         PaymentCode pcode = pwalletMain->getPaymentCodeInNotificationTransaction(tx);
         if (pcode.isValid())
         {
+            bool needsSaving = pwalletMain->savePaymentCode(pcode);
+            if(needsSaving)
+            {
+                LogPrintf("saveBip47PaymentChannelData\n");
+                pwalletMain->saveBip47PaymentChannelData(pcode.toString());
+            }
+
             return pcode.toString();
         }
         else
@@ -4188,6 +4217,94 @@ UniValue SecretPointCheck(const UniValue& params, bool fHelp)
         return "false";
     }
     
+}
+
+UniValue PaymentAddressSelfCheck(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    
+    if(PaymentAddress::SelfTest(pwalletMain))
+    {
+        return "true";
+    }
+    else
+    {
+        return "false";
+    }
+}
+
+UniValue validatepcode(const UniValue& params, bool fHelp)
+{
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+                "validatepcode \"paymentcode\"\n"
+                "\nReturn information about the given paymentcode.\n"
+                "\nArguments:\n"
+                "1. \"paymentcode\"     (string, required) The paymentcode to validate\n"
+                "\nResult:\n"
+                "{\n"
+                "  \"isvalid\" : true|false,       (boolean) If the paymentcode is valid or not. If not, this is the only property returned.\n"
+                "  \"paymentcode\" : \"paymentcode\", (string) The Zcoin paymentcode validated\n"
+                "  \"scriptPubKey\" : \"hex\",       (string) The hex encoded scriptPubKey generated by the address\n"
+                "  \"ismine\" : true|false,        (boolean) If the address is yours or not\n"
+                "  \"iswatchonly\" : true|false,   (boolean) If the address is watchonly\n"
+                "  \"isscript\" : true|false,      (boolean) If the key is a script\n"
+                "  \"pubkey\" : \"publickeyhex\",    (string) The hex value of the raw public key\n"
+                "  \"iscompressed\" : true|false,  (boolean) If the address is compressed\n"
+                "  \"account\" : \"account\"         (string) DEPRECATED. The account associated with the address, \"\" is the default account\n"
+                "  \"hdkeypath\" : \"keypath\"       (string, optional) The HD keypath if the key is HD and available\n"
+                "  \"hdmasterkeyid\" : \"<hash160>\" (string, optional) The Hash160 of the HD master pubkey\n"
+                "}\n"
+                "\nExamples:\n"
+                + HelpExampleCli("validatepcode", "\"PM8TJgiBF3npDfpxaKqU9W8iDL3T9v8j1RMVqoLqNFQcFdJ6PqjmcosHEQsHMGwe3CcgSdPz46NvJkNpHWym7b3XPF2CMZvcMT5vCvTnh58zpw529bGn\"")
+                + HelpExampleRpc("validatepcode", "\"PM8TJgiBF3npDfpxaKqU9W8iDL3T9v8j1RMVqoLqNFQcFdJ6PqjmcosHEQsHMGwe3CcgSdPz46NvJkNpHWym7b3XPF2CMZvcMT5vCvTnh58zpw529bGn\"")
+        );
+
+#ifdef ENABLE_WALLET
+    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
+#else
+    LOCK(cs_main);
+#endif
+
+    std::string strPcode = params[0].get_str();
+    PaymentCode paymentCode(strPcode);
+    Bip47Account bip47Account(strPcode);
+    bool isValid = paymentCode.isValid();
+    bool walletBip47AccountValid = pwalletMain->getBip47Account(0).isValid();
+
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("isvalid", isValid));
+    ret.push_back(Pair("Notification Address", bip47Account.getNotificationAddress().ToString()));
+    ret.push_back(Pair("Wallet Account isvalid", walletBip47AccountValid));
+    
+    if(pwalletMain->getPaymentCode().compare(strPcode) == 0)
+    {
+        ret.push_back(Pair("IsMine", true));
+    }
+    else
+    {
+        ret.push_back(Pair("IsMine", false));
+        Bip47PaymentChannel pchannel(strPcode);
+        std::string outaddress = pwalletMain->getCurrentOutgoingAddress(pchannel);
+        ret.push_back(Pair("OutGoingAddress", outaddress));
+        if(pchannel.getIncomingAddresses().size() == 0) {
+            PaymentAddress paddr = BIP47Util::getReceiveAddress(pwalletMain, paymentCode, 0);
+            CKey receiveKey = paddr.getReceiveECKey();
+            CPubKey rePubKey = receiveKey.GetPubKey();
+            CBitcoinAddress rcvAddr(rePubKey.GetID());
+            ret.push_back(Pair("IncomingAddress", rcvAddr.ToString()));
+        } else {
+            LogPrintf("current Incoming Address size = %d\n", pchannel.getIncomingAddresses().size());
+            
+        }
+        
+    }
+
+    return ret;
 }
 
 
@@ -4434,6 +4551,10 @@ static const CRPCCommand commands[] =
     { "wallet",             "getreceivedbypcode",     &getreceivedbypcode,     false },
     { "wallet",             "getPaymentCodeFromNotificationTx",     &getPaymentCodeFromNotificationTx,     false },
     { "wallet",             "SecretPointCheck",     &SecretPointCheck,     false },
+    { "wallet",             "PaymentAddressSelfCheck",     &PaymentAddressSelfCheck,     false },
+    { "wallet",              "validatepcode",       &validatepcode,      true  },
+    
+
 };
 
 void RegisterWalletRPCCommands(CRPCTable &tableRPC)

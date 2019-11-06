@@ -139,21 +139,45 @@ bool BIP47Util::getScriptSigPubkey(CTxIn txin, vector<unsigned char>& pubkeyByte
     }
 
     LogPrintf("Script did not match expected form: \n");
-    // while (pc < txin.scriptSig.end())
-    // {
-    //     opcodetype opcode;
-    //     if (!txin.scriptSig.GetOp(pc, opcode, chunk0data))
-    //         break;
-    //     if (data.size() == 80 && opcode == OP_RETURN)
-    //     {
-    //         op_data = data;
-    //         return true;
-    //     }
-    // }
     return false;
 }
 
 PaymentAddress BIP47Util::getPaymentAddress(PaymentCode &pcode, int idx, CExtKey extkey) {
-    vector<unsigned char> privKey(extkey.key.GetPrivKey().begin(), extkey.key.GetPrivKey().end());
-    return PaymentAddress(0, pcode, idx, privKey);
+//     CPrivKey privekey = extkey.key.GetPrivKey();
+    CKey prvkey = extkey.key;
+//     vector<unsigned char> privKey(privekey.begin(), privekey.end());
+    
+    vector<unsigned char> ppkeybytes(prvkey.begin(), prvkey.end());
+    
+    
+    PaymentAddress paddr(pcode, idx, ppkeybytes);
+    return paddr;
+    
 }
+
+PaymentAddress BIP47Util::getReceiveAddress(CWallet* pbip47Wallet, PaymentCode &pcode_from, int idx)
+{
+    PaymentAddress pm_address;
+    CExtKey accEkey = pbip47Wallet->getBip47Account(0).keyPrivAt(idx);
+    if(accEkey.key.IsValid()){
+    }
+    pm_address = getPaymentAddress(pcode_from, 0, accEkey);
+    
+    return pm_address;
+}
+
+PaymentAddress BIP47Util::getSendAddress(CWallet* pbip47Wallet, PaymentCode &pcode_to, int idx)
+{
+    PaymentAddress pm_address;
+    CExtKey accEkey = pbip47Wallet->getBip47Account(0).keyPrivAt(0);
+    if(accEkey.key.IsValid()){
+    }
+    pm_address = getPaymentAddress(pcode_to, idx, accEkey);
+    
+    return pm_address;
+    
+}
+
+
+
+

@@ -84,7 +84,9 @@ const uint32_t BIP44_INDEX = 0x2C;
 const uint32_t BIP44_TEST_INDEX = 0x1;   // https://github.com/satoshilabs/slips/blob/master/slip-0044.md#registered-coin-types
 const uint32_t BIP44_ZCOIN_INDEX = 0x88; // https://github.com/satoshilabs/slips/blob/master/slip-0044.md#registered-coin-types
 const uint32_t BIP44_MINT_INDEX = 0x2;
-
+#ifdef ENABLE_EXODUS
+const uint32_t BIP44_EXODUS_MINT_INDEX = 0x3;
+#endif
 const uint32_t BIP47_INDEX = 0x2F;
 const uint32_t BIP47_TEST_INDEX = 0x1;   // https://github.com/satoshilabs/slips/blob/master/slip-0044.md#registered-coin-types
 const uint32_t BIP47_ZCOIN_INDEX = 0x88; // https://github.com/satoshilabs/slips/blob/master/slip-0044.md#registered-coin-types
@@ -690,6 +692,7 @@ public:
 
     bool fFileBacked;
     std::string strWalletFile;
+    static std::string bip47WalletFile;
 
     std::set<int64_t> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
@@ -796,6 +799,7 @@ public:
     bool HasCollateralInputs(bool fOnlyConfirmed = true) const;
     int  CountInputsWithAmount(CAmount nInputAmount);
 
+    CPubKey GetKeyFromKeypath(uint32_t nChange, uint32_t nChild);
     /**
      * keystore implementation
      * Generate a new key
@@ -1228,15 +1232,32 @@ public:
     
     CBitcoinAddress getAddressOfReceived(CTransaction tx);
     CBitcoinAddress getAddressOfSent(CTransaction tx);
+    
+    bool savePaymentCode(PaymentCode from_pcode);
+
 
     Bip47Account getBip47Account(int i);
     
     std::string getNotifiactionAddress();
 
     std::string getPaymentCode();
+    std::string getPaymentCodeForAddress(std::string address);
     
     void deriveBip47Accounts(std::vector<unsigned char> hd_seed);
     void deriveBip47Accounts(CExtKey masterKey);
+    
+    bool importBip47PaymentChannelData();
+    void saveBip47PaymentChannelData(string pchannelId);
+    bool addToBip47PaymentChannel(Bip47PaymentChannel paymentChannel);
+    bool generateNewBip47IncomingAddress(string address);
+    Bip47PaymentChannel* getPaymentChannelFromPaymentCode(std::string pcodestr);
+    
+    void processNotificationTransaction(CTransaction tx);
+    
+    std::string getCurrentOutgoingAddress(Bip47PaymentChannel paymentChannel);
+    
+    bool importKey(CKey imKey, bool fRescan = false);
+    CBitcoinAddress getAddressOfKey(CPubKey pkey);
 
     
 };

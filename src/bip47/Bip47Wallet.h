@@ -31,7 +31,7 @@ public:
     
     PaymentCode getPaymentCodeInNotificationTransaction(CTransaction tx);
     bool savePaymentCode(PaymentCode paymentCode);
-    CBitcoinAddress getAddressOfKey(CExtPubKey pkey);
+    CBitcoinAddress getAddressOfKey(CPubKey pkey);
     bool generateNewBip47IncomingAddress(std::string strAddress);
     Bip47PaymentChannel getBip47PaymentChannelForAddress(std::string strAddres);
     string getPaymentCodeForAddress(string address);
