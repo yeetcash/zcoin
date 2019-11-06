@@ -1305,7 +1305,7 @@ bool CWalletDB::WriteCBip47HDChain(const CBip47HDChain& bip47chain) {
 bool CWalletDB::WriteBip47PaymentChannel(const Bip47PaymentChannel& pchannel, const string& channelId)
 {
     nWalletDBUpdated++;
-    return Write(std::make_pair(std::string("Bip47PaymentChannel"), channelId), pchannel, true);
+    return Write(std::make_pair(std::string("Bip47PaymentChannel"), channelId), pchannel);
 }
 
 void CWalletDB::ListBip47PaymentChannel(std::map <string, Bip47PaymentChannel> &mPchannels)
@@ -1316,10 +1316,13 @@ void CWalletDB::ListBip47PaymentChannel(std::map <string, Bip47PaymentChannel> &
     unsigned int fFlags = DB_SET_RANGE;
     while (true) {
         // Read next record
+        LogPrintf("Create CDataStream ssKey\n");
         CDataStream ssKey(SER_DISK, CLIENT_VERSION);
         if (fFlags == DB_SET_RANGE)
             ssKey << make_pair(string("Bip47PaymentChannel"), string(""));
+        LogPrintf("Create CDataStream ssValue\n");
         CDataStream ssValue(SER_DISK, CLIENT_VERSION);
+        LogPrintf("ReadAtCursor sskey and ssValue\n");
         int ret = ReadAtCursor(pcursor, ssKey, ssValue, fFlags);
         fFlags = DB_NEXT;
         if (ret == DB_NOTFOUND)
@@ -1328,15 +1331,20 @@ void CWalletDB::ListBip47PaymentChannel(std::map <string, Bip47PaymentChannel> &
             pcursor->close();
             throw runtime_error("CWalletDB::ListBip47PaymentChannel() : error scanning DB");
         }
+        LogPrintf("Unserialize sskey and ssValue\n");
         // Unserialize
         string strType;
         ssKey >> strType;
+        LogPrintf("strType is %s\n", strType);
         if (strType != "Bip47PaymentChannel")
             break;
         std::string value;
         ssKey >> value;
+        LogPrintf("value is %s\n", value);
         Bip47PaymentChannel pchannel;
+        LogPrintf("ssValue Size is %d\n", ssValue.size());
         ssValue >> pchannel;
+        LogPrintf("Get Pchannl %s\n", pchannel.getPaymentCode());
         mPchannels.insert(make_pair(value, pchannel));
     }
     pcursor->close();

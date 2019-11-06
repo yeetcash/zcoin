@@ -1447,7 +1447,9 @@ void CWallet::loadBip47Wallet(CExtKey masterExtKey)
 {
     LogPrintf("Bip47Wallet Loading....\n");
     
-//     CWalletDB(bip47WalletFile, "cr+").ListBip47PaymentChannel(this->m_Bip47channels);
+    CWalletDB bip47walletdb(bip47WalletFile, "cr+");
+    
+    bip47walletdb.ListBip47PaymentChannel(this->m_Bip47channels);
     
     
     deriveBip47Accounts(masterExtKey);
@@ -1724,8 +1726,8 @@ std::string CWallet::getPaymentCodeForAddress(std::string address)
     std::map<string, Bip47PaymentChannel>::iterator m_it = m_Bip47channels.begin();
     while(m_it != m_Bip47channels.end())
     {
-        std::list<Bip47Address> income_addresses = m_it->second.getIncomingAddresses();
-        std::list<Bip47Address>::iterator l_it = income_addresses.begin();
+        std::vector<Bip47Address> income_addresses = m_it->second.getIncomingAddresses();
+        std::vector<Bip47Address>::iterator l_it = income_addresses.begin();
         while(l_it != income_addresses.end())
         {
             if(l_it->getAddress().compare(address) == 0)
@@ -1788,7 +1790,14 @@ void CWallet::saveBip47PaymentChannelData(string pchannelId)
         if(it != m_Bip47channels.end())
         {
             LogPrintf("Save PaymentChannel %s\n", pchannelId);
-            walletdb.WriteBip47PaymentChannel(it->second, pchannelId);
+            if(walletdb.WriteBip47PaymentChannel(it->second, pchannelId))
+            {
+                LogPrintf("Save Bip47 PaymentChannel Success\n");
+            }
+            else
+            {
+                LogPrintf("Error Bip47 PaymentChannel Write\n");
+            }
         }
         else
         {
@@ -1819,8 +1828,8 @@ bool CWallet::generateNewBip47IncomingAddress(string address)
 {
     std::string pcodestr = getPaymentCodeForAddress(address);
     Bip47PaymentChannel* pchannel = getPaymentChannelFromPaymentCode(pcodestr);
-    std::list<Bip47Address> income_addresses = pchannel->getIncomingAddresses();
-    std::list<Bip47Address>::iterator l_it = income_addresses.begin();
+    std::vector<Bip47Address> income_addresses = pchannel->getIncomingAddresses();
+    std::vector<Bip47Address>::iterator l_it = income_addresses.begin();
     while(l_it != income_addresses.end()) 
     {
         if(!l_it->getAddress().compare(address) == 0) 

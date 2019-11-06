@@ -337,7 +337,7 @@ public:
     // @bip47 channel data write
     bool WriteBip47PaymentChannel(const Bip47PaymentChannel& pchannel, const string& channelId);
     
-    void ListBip47PaymentChannel(std::map<string, Bip47PaymentChannel> &mPchannels);
+    void ListBip47PaymentChannel(std::map <string, Bip47PaymentChannel> &mPchannels);
     
     bool WritePaymentChannelData();
 

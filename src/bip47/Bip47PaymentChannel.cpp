@@ -37,7 +37,7 @@ void Bip47PaymentChannel::setPaymentCode(string pc) {
     paymentCode = pc;
 }
 
-std::list<Bip47Address>& Bip47PaymentChannel::getIncomingAddresses() {
+std::vector<Bip47Address>& Bip47PaymentChannel::getIncomingAddresses() {
     return incomingAddresses;
 }
 
@@ -82,7 +82,7 @@ void Bip47PaymentChannel::setLabel(string l) {
     label = l;
 }
 
-std::list<string>& Bip47PaymentChannel::getOutgoingAddresses() {
+std::vector<string>& Bip47PaymentChannel::getOutgoingAddresses() {
     return outgoingAddresses;
 }
 

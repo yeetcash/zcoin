@@ -108,8 +108,8 @@ bool Bip47Wallet::generateNewBip47IncomingAddress(std::string strAddress)
     while(it != channels.end()) 
     {
         Bip47PaymentChannel paymentChannel = it->second;
-        std::list<Bip47Address> bip47Addresses = paymentChannel.getIncomingAddresses();
-        std::list<Bip47Address>::iterator addit = bip47Addresses.begin();
+        std::vector<Bip47Address> bip47Addresses = paymentChannel.getIncomingAddresses();
+        std::vector<Bip47Address>::iterator addit = bip47Addresses.begin();
         while (addit != bip47Addresses.end())
         {
             if(addit->getAddress().compare(strAddress) != 0) 
@@ -150,8 +150,8 @@ Bip47PaymentChannel Bip47Wallet::getBip47PaymentChannelForAddress(std::string st
 
     while(it != channels.end()) {
         Bip47PaymentChannel paymentChannel = it->second;
-        std::list<Bip47Address> bip47Addresses = paymentChannel.getIncomingAddresses();
-        std::list<Bip47Address>::iterator bip47Address = bip47Addresses.begin();
+        std::vector<Bip47Address> bip47Addresses = paymentChannel.getIncomingAddresses();
+        std::vector<Bip47Address>::iterator bip47Address = bip47Addresses.begin();
         while (bip47Address != bip47Addresses.end())
         {
             if( bip47Address->getAddress().compare(strAddress) == 0) {
