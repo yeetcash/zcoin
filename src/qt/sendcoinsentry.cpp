@@ -15,6 +15,7 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QMessageBox>
 
 SendCoinsEntry::SendCoinsEntry(const PlatformStyle *platformStyle, QWidget *parent) :
     QStackedWidget(parent),
@@ -69,6 +70,7 @@ void SendCoinsEntry::on_addressBookButton_clicked()
         return;
     AddressBookPage dlg(platformStyle, AddressBookPage::ForSelection, AddressBookPage::SendingTab, this);
     dlg.setModel(model->getAddressTableModel());
+    dlg.setModel(model->getPaymentCodeTableModel());
     if(dlg.exec())
     {
         ui->payTo->setText(dlg.getReturnValue());
@@ -161,6 +163,8 @@ bool SendCoinsEntry::validate()
 bool SendCoinsEntry::isPaymentCode()
 {
     std::string address = ui->payTo->text().toStdString();
+    if (address.empty())
+        return false;
     PaymentCode pcode(address);
     return pcode.isValid();
     
@@ -269,13 +273,37 @@ bool SendCoinsEntry::updateLabel(const QString &address)
     if(!model)
         return false;
 
-    // Fill in label from address book, if address has an associated label
-    QString associatedLabel = model->getAddressTableModel()->labelForAddress(address);
-    if(!associatedLabel.isEmpty())
+    if(isPaymentCode()) 
     {
-        ui->addAsLabel->setText(associatedLabel);
-        return true;
+        ui->addressDetectedType->setText("PRIVATE PAYMENT CODE DETECTED");
+        // Fill in label from address book, if address has an associated label
+        QString associatedLabel = model->getPaymentCodeTableModel()->labelForAddress(address);
+        if(!associatedLabel.isEmpty())
+        {
+            ui->addAsLabel->setText(associatedLabel);
+            return true;
+        }
     }
+    else if(model->validateAddress(ui->payTo->text()))
+    {
+        LogPrintf("validate address zcoin \n");
+        ui->addressDetectedType->setText("REGULAR ZCOIN ADDRESS DETECTED");
+        
+        // Fill in label from address book, if address has an associated label
+        QString associatedLabel = model->getAddressTableModel()->labelForAddress(address);
+        if(!associatedLabel.isEmpty())
+        {
+            ui->addAsLabel->setText(associatedLabel);
+            return true;
+        }
+    } 
+    else 
+    {
+        ui->addressDetectedType->clear();
+        return false;
+    }
+    
+    
 
     return false;
 }

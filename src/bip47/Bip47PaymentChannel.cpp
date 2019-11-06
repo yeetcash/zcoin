@@ -75,7 +75,7 @@ void Bip47PaymentChannel::addNewIncomingAddress(string newAddress, int nextIndex
     currentIncomingIndex = nextIndex;
 }
 
-string Bip47PaymentChannel::getLabel() {
+string Bip47PaymentChannel::getLabel() const {
     return label;
 }
 

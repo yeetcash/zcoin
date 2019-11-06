@@ -61,7 +61,6 @@
 #include "bip47/Bip47Util.h"
 #include "bip47/PaymentAddress.h"
 
-
 using namespace std;
 
 CWallet *pwalletMain = NULL;
@@ -881,6 +880,7 @@ void CWallet::MarkDirty() {
 }
 
 bool CWallet::AddToWallet(const CWalletTx &wtxIn, bool fFromLoadWallet, CWalletDB *pwalletdb) {
+    
     LogPrintf("CWallet::AddToWallet\n");
     uint256 hash = wtxIn.GetHash();
     LogPrintf("hash=%s\n", hash.ToString());
@@ -999,6 +999,7 @@ bool CWallet::AddToWallet(const CWalletTx &wtxIn, bool fFromLoadWallet, CWalletD
 
     }
     LogPrintf("CWallet::AddToWallet -> ok\n");
+    
     return true;
 }
 
@@ -1026,16 +1027,15 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction &tx, const CBlock *pbl
 //                }
 //            }
 //        }
-
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
-
         if(isNotificationTransaction(tx))
         {
             processNotificationTransaction(tx);
         }
         else if(isToBIP47Address(tx))
         {
+            LogPrintf("444444@@@@@@@@@@@Rescanning last\n");
             std::string toaddr = getAddressOfReceived(tx).ToString();
             LogPrintf("New Bip47 payment Recevied to address %s\n", toaddr);
             
@@ -1047,6 +1047,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction &tx, const CBlock *pbl
         }
 
         if (fExisted || IsMine(tx) || IsFromMe(tx)) {
+            LogPrintf("66666@@@@@@@@@@@Rescanning last\n");
             CWalletTx wtx(this, tx);
 
             // Get merkle branch if transaction was found in a block
@@ -1247,10 +1248,13 @@ void CWallet::SyncTransaction(const CTransaction &tx, const CBlockIndex *pindex,
 //    LogPrintf("SyncTransaction()\n");
     LOCK2(cs_main, cs_wallet);
 
+    LogPrintf("############## check if AddToWalletIfInvolvingMe\n");
     if (!AddToWalletIfInvolvingMe(tx, pblock, true)) {
 //        LogPrintf("Not mine!\n");
         return; // Not one of ours
     }
+    
+    LogPrintf("############## Find Tx to me\n");
 
     // If a transaction changes 'conflicted' state, that changes the balance
     // available of the outputs it spends. So force those to be
@@ -1260,6 +1264,8 @@ void CWallet::SyncTransaction(const CTransaction &tx, const CBlockIndex *pindex,
         if (mapWallet.count(txin.prevout.hash))
             mapWallet[txin.prevout.hash].MarkDirty();
     }
+    
+    LogPrintf("############## Set Mark Dirty Done\n");
 }
 
 
@@ -1639,15 +1645,31 @@ bool CWallet::isNotificationTransaction(CTransaction tx)
     return false;
 }
 
+bool CWallet::isNotificationTransactionSent(string pcodestr)
+{
+    PaymentCode pcode(pcodestr);
+    if(!pcode.isValid())
+        return false;
+    if(m_Bip47channels.count(pcodestr) > 0)
+    {
+        Bip47PaymentChannel* pchannel = getPaymentChannelFromPaymentCode(pcodestr);
+        return pchannel->isNotificationTransactionSent();
+    }
+    return false;
+    
+}
+
+//@todo
 bool CWallet::isToBIP47Address(CTransaction tx)
 {
 
-    CBitcoinAddress incomingAddr = getAddressOfReceived(tx);
-    if(incomingAddr.IsValid())
-    {
-        string pcodestr = getPaymentCodeForAddress(incomingAddr.ToString());
-        return !pcodestr.empty();
-    }
+//     CBitcoinAddress incomingAddr = getAddressOfReceived(tx);
+//     if(incomingAddr.IsValid())
+//     {
+//         string pcodestr = getPaymentCodeForAddress(incomingAddr.ToString());
+//         LogPrintf("PaymentCode is %s For incomingAddr %s and valid is %s \n", pcodestr, incomingAddr.ToString(), !pcodestr.empty() ? "True": "False");
+//         return !pcodestr.empty();
+//     }
 
     return false;
 }
@@ -1770,7 +1792,6 @@ string CWallet::getPaymentCode()
 
 std::string CWallet::getPaymentCodeForAddress(std::string address)
 {
-    std::string result;
     std::map<string, Bip47PaymentChannel>::iterator m_it = m_Bip47channels.begin();
     while(m_it != m_Bip47channels.end())
     {
@@ -1783,7 +1804,7 @@ std::string CWallet::getPaymentCodeForAddress(std::string address)
         }
     }
     
-    return result;
+    return "";
 }
 
 void CWallet::deriveBip47Accounts(vector<unsigned char> hd_seed)
@@ -1872,6 +1893,20 @@ bool CWallet::addToBip47PaymentChannel(Bip47PaymentChannel paymentChannel)
 
 }
 
+bool CWallet::AddPCodeNotificationData(const std::string &rpcodestr, const std::string &key, const std::string &value)
+{
+    return CWalletDB(bip47WalletFile).WritePcodeNotificationData(rpcodestr, key, value);
+}
+
+bool CWallet::ErasePCodeNotificationData(const std::string &rpcodestr, const std::string &key) {
+    return CWalletDB(bip47WalletFile).ErasePcodeNotificationData(rpcodestr, key);
+}
+
+bool CWallet::loadPCodeNotificationTransactions(std::vector<std::string>& vPCodeNotificationTransactions)
+{
+    return CWalletDB(bip47WalletFile).loadPCodeNotificationTransactions(vPCodeNotificationTransactions);
+}
+
 bool CWallet::generateNewBip47IncomingAddress(string address)
 {
     std::string pcodestr = getPaymentCodeForAddress(address);
@@ -1920,6 +1955,13 @@ Bip47PaymentChannel* CWallet::getPaymentChannelFromPaymentCode(std::string pcode
         }
         return &ret.first->second;
     }
+}
+
+bool CWallet::setBip47ChannelLabel(std::string pcodestr, std::string label)
+{
+    Bip47PaymentChannel* pchannel = getPaymentChannelFromPaymentCode(pcodestr);
+    pchannel->setLabel(label);
+    saveBip47PaymentChannelData(pcodestr);
 }
 
 void CWallet::processNotificationTransaction(CTransaction tx)
@@ -2123,21 +2165,21 @@ int CWallet::ScanForWalletTransactions(CBlockIndex *pindexStart, bool fUpdate) {
     int ret = 0;
     int64_t nNow = GetTime();
     const CChainParams &chainParams = Params();
-
+LogPrintf("1Rescanning last\n");
     CBlockIndex *pindex = pindexStart;
     {
         LOCK2(cs_main, cs_wallet);
-
+LogPrintf("2Rescanning last\n");
         // no need to read and scan block, if block was created before
         // our wallet birthday (as adjusted for block time variability)
         while (pindex && nTimeFirstKey && (pindex->GetBlockTime() < (nTimeFirstKey - 7200)))
             pindex = chainActive.Next(pindex);
-
+LogPrintf("2@@@@@@@@@Rescanning last\n");
         ShowProgress(_("Rescanning..."),
                      0); // show rescan progress in GUI as dialog or on splashscreen, if -rescan on startup
         double dProgressStart = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex, false);
-        double dProgressTip = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip(),
-                                                                     false);
+        double dProgressTip = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip(), false);
+        LogPrintf("@@@@@@@@@@@Rescanning last\n");
         while (pindex) {
             if (pindex->nHeight % 100 == 0 && dProgressTip - dProgressStart > 0.0)
                 ShowProgress(_("Rescanning..."), std::max(1, std::min(99,
@@ -2150,10 +2192,14 @@ int CWallet::ScanForWalletTransactions(CBlockIndex *pindexStart, bool fUpdate) {
             ReadBlockFromDisk(block, pindex, Params().GetConsensus());
             BOOST_FOREACH(CTransaction & tx, block.vtx)
             {
+                LogPrintf("ccc@@@@@@@@@@@Rescanning last\n");
                 if (AddToWalletIfInvolvingMe(tx, &block, fUpdate))
                     ret++;
+                LogPrintf("dd@@@@@@@@@@@Rescanning last\n");
             }
+            LogPrintf("kk@@@@@@@@@Rescanning last\n");
             pindex = chainActive.Next(pindex);
+            LogPrintf("ll@@@@@@@@@Rescanning last\n");
             if (GetTime() >= nNow + 60) {
                 nNow = GetTime();
                 LogPrintf("Still rescanning. At block %d. Progress=%f\n", pindex->nHeight,
@@ -2162,6 +2208,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex *pindexStart, bool fUpdate) {
         }
         ShowProgress(_("Rescanning..."), 100); // hide progress dialog in GUI
     }
+    LogPrintf("############Rescanning last\n");
     return ret;
 }
 
@@ -7746,7 +7793,7 @@ bool CWallet::SetAddressBook(const CTxDestination &address, const string &strNam
         if (!strPurpose.empty()) /* update purpose only if requested */
             mapAddressBook[address].purpose = strPurpose;
     }
-    NotifyAddressBookChanged(this, address, strName, ::IsMine(*this, address) != ISMINE_NO,
+    (this, address, strName, ::IsMine(*this, address) != ISMINE_NO,
                              strPurpose, (fUpdated ? CT_UPDATED : CT_NEW));
     if (!fFileBacked)
         return false;

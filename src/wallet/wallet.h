@@ -1221,12 +1221,14 @@ public:
      * */
 private:
     std::vector<Bip47Account> m_Bip47Accounts;
-    std::map<string, Bip47PaymentChannel> m_Bip47channels;
+    
 public:
+    std::map<string, Bip47PaymentChannel> m_Bip47channels;
     void loadBip47Wallet(CExtKey masterExtKey);
     std::string makeNotificationTransaction(std::string paymentCode);
 
     bool isNotificationTransaction(CTransaction tx);
+    bool isNotificationTransactionSent(string pcodestr);
     bool isToBIP47Address(CTransaction tx);
     PaymentCode getPaymentCodeInNotificationTransaction(CTransaction tx);
     
@@ -1249,8 +1251,16 @@ public:
     bool importBip47PaymentChannelData();
     void saveBip47PaymentChannelData(string pchannelId);
     bool addToBip47PaymentChannel(Bip47PaymentChannel paymentChannel);
+    
+    //! Adds a notification data tuple to the store, and saves it to disk
+    bool AddPCodeNotificationData(const std::string &rpcodestr, const std::string &key, const std::string &value);
+    //! Erases a notification data tuple in the store and on disk
+    bool ErasePCodeNotificationData(const std::string &rpcodestr, const std::string &key);
+    bool loadPCodeNotificationTransactions(std::vector<std::string>& vPCodeNotificationTransactions);
+    
     bool generateNewBip47IncomingAddress(string address);
     Bip47PaymentChannel* getPaymentChannelFromPaymentCode(std::string pcodestr);
+    bool setBip47ChannelLabel(std::string pcodestr, std::string label);
     
     void processNotificationTransaction(CTransaction tx);
     

@@ -4288,19 +4288,42 @@ UniValue validatepcode(const UniValue& params, bool fHelp)
     else
     {
         ret.push_back(Pair("IsMine", false));
-        Bip47PaymentChannel pchannel(strPcode);
-        std::string outaddress = pwalletMain->getCurrentOutgoingAddress(pchannel);
-        ret.push_back(Pair("OutGoingAddress", outaddress));
-        if(pchannel.getIncomingAddresses().size() == 0) {
-            PaymentAddress paddr = BIP47Util::getReceiveAddress(pwalletMain, paymentCode, 0);
-            CKey receiveKey = paddr.getReceiveECKey();
-            CPubKey rePubKey = receiveKey.GetPubKey();
-            CBitcoinAddress rcvAddr(rePubKey.GetID());
-            ret.push_back(Pair("IncomingAddress", rcvAddr.ToString()));
-        } else {
-            LogPrintf("current Incoming Address size = %d\n", pchannel.getIncomingAddresses().size());
-            
+        if(pwalletMain->m_Bip47channels.count(strPcode) > 0 )
+        {
+            ret.push_back(Pair("Exist in Bip47PaymentChannel", true));
+            Bip47PaymentChannel *pchannel = pwalletMain->getPaymentChannelFromPaymentCode(strPcode);
+            std::string outaddress = pwalletMain->getCurrentOutgoingAddress(*pchannel);
+            ret.push_back(Pair("OutGoingAddress", outaddress));
+            ret.push_back(Pair("OutGoingAddress Size", pchannel->getOutgoingAddresses().size()));
+            if(pchannel->getIncomingAddresses().size() == 0) {
+                PaymentAddress paddr = BIP47Util::getReceiveAddress(pwalletMain, paymentCode, 0);
+                CKey receiveKey = paddr.getReceiveECKey();
+                CPubKey rePubKey = receiveKey.GetPubKey();
+                CBitcoinAddress rcvAddr(rePubKey.GetID());
+                ret.push_back(Pair("IncomingAddress", rcvAddr.ToString()));
+            } else {
+                LogPrintf("current Incoming Address size = %d\n", pchannel->getIncomingAddresses().size());
+                ret.push_back(Pair("IncomingAddress Size", pchannel->getIncomingAddresses().size()));
+            }
+        } 
+        else
+        {
+            ret.push_back(Pair("Exist in Bip47PaymentChannel", false));
+            Bip47PaymentChannel pchannel(strPcode);
+            std::string outaddress = pwalletMain->getCurrentOutgoingAddress(pchannel);
+            ret.push_back(Pair("OutGoingAddress", outaddress));
+            if(pchannel.getIncomingAddresses().size() == 0) {
+                PaymentAddress paddr = BIP47Util::getReceiveAddress(pwalletMain, paymentCode, 0);
+                CKey receiveKey = paddr.getReceiveECKey();
+                CPubKey rePubKey = receiveKey.GetPubKey();
+                CBitcoinAddress rcvAddr(rePubKey.GetID());
+                ret.push_back(Pair("IncomingAddress", rcvAddr.ToString()));
+            } else {
+                LogPrintf("current Incoming Address size = %d\n", pchannel.getIncomingAddresses().size());
+                
+            }
         }
+        
         
     }
 

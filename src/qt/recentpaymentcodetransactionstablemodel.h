@@ -29,7 +29,7 @@ public:
     int nVersion;
     int64_t id;
     QDateTime date;
-    double_t fee;
+    CAmount fee;
     QString rpcode;
     // SendCoinsRecipient recipient;
 
@@ -100,8 +100,8 @@ public:
     /*@}*/
 
     // const RecentRequestEntry &entry(int row) const { return list[row]; }
-    // void addNewRequest(const SendCoinsRecipient &recipient);
-    // void addNewRequest(const std::string &recipient);
+    void addNewRequest(const QString &rpcode, CAmount fee);
+    void addNewRequest(const std::string &recipient);
     void addNewRequest(RecentPCodeTransactionEntry &recipient);
 
 public Q_SLOTS:
@@ -112,7 +112,7 @@ private:
     WalletModel *walletModel;
     QStringList columns;
     QList<RecentPCodeTransactionEntry> list;
-    // int64_t nReceiveRequestsMaxId;
+    int64_t nRecentPCodeNotificationMaxId;
 
     /** Updates the column title to "Amount (DisplayUnit)" and emits headerDataChanged() signal for table headers to react. */
     // void updateAmountColumnTitle();

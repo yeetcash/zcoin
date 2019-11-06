@@ -43,6 +43,7 @@ WalletModel::WalletModel(const PlatformStyle *platformStyle, CWallet *wallet, Op
     transactionTableModel(0),
     recentRequestsTableModel(0),
     recentPCodeTransactionsTableModel(0),
+    paymentCodeTableModel(0),
     cachedBalance(0), cachedUnconfirmedBalance(0), cachedImmatureBalance(0),
     cachedEncryptionStatus(Unencrypted),
     cachedNumBlocks(0)
@@ -54,6 +55,7 @@ WalletModel::WalletModel(const PlatformStyle *platformStyle, CWallet *wallet, Op
     transactionTableModel = new TransactionTableModel(platformStyle, wallet, this);
     recentRequestsTableModel = new RecentRequestsTableModel(wallet, this);
     recentPCodeTransactionsTableModel = new RecentPCodeTransactionsTableModel(wallet, this);
+    paymentCodeTableModel = new PaymentCodeTableModel(wallet, this);
 
     // This timer will be fired repeatedly to update the balance
     pollTimer = new QTimer(this);
@@ -285,6 +287,11 @@ bool WalletModel::validatePaymentCode(const QString &pCode)
 {
     PaymentCode paymentCode(pCode.toStdString());
     return paymentCode.isValid();
+}
+
+bool WalletModel::isNotificationTransactionSent(const QString &pCode)
+{
+    return wallet->isNotificationTransactionSent(pCode.toStdString());
 }
 
 WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransaction &transaction, const CCoinControl *coinControl)
@@ -572,6 +579,7 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
         std::string strFailReason;
 
         CWalletTx *newTx = transaction.getTransaction();
+        
         CReserveKey *keyChange = transaction.getPossibleKeyChange();
         bool fCreated = wallet->CreateTransaction(vecSend, *newTx, *keyChange, nFeeRequired, nChangePosRet, strFailReason, coinControl);
 
@@ -673,8 +681,10 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
     return SendCoinsReturn(OK);
 }
 
-WalletModel::SendCoinsReturn WalletModel::sendPCodeCoins(WalletModelTransaction &transaction)
+WalletModel::SendCoinsReturn WalletModel::sendPCodeCoins(WalletModelTransaction &transaction, bool &needMainTx)
 {
+    
+    needMainTx = false;
     QByteArray transaction_array; /* store serialized transaction */
 
     {
@@ -708,9 +718,11 @@ WalletModel::SendCoinsReturn WalletModel::sendPCodeCoins(WalletModelTransaction 
         // Add to payment channel return true or false;
         wallet->addToBip47PaymentChannel(pchannel);
         Bip47PaymentChannel* channel = wallet->getPaymentChannelFromPaymentCode(pcodestr);
+        channel->setLabel(strLabel);
         if(!channel->isNotificationTransactionSent())
         {
             channel->setStatusSent();
+            needMainTx = true;
         }
         else 
         {
@@ -738,6 +750,11 @@ OptionsModel *WalletModel::getOptionsModel()
 AddressTableModel *WalletModel::getAddressTableModel()
 {
     return addressTableModel;
+}
+
+PaymentCodeTableModel *WalletModel::getPaymentCodeTableModel()
+{
+    return paymentCodeTableModel;
 }
 
 TransactionTableModel *WalletModel::getTransactionTableModel()
@@ -1045,6 +1062,13 @@ void WalletModel::loadReceiveRequests(std::vector<std::string>& vReceiveRequests
                 vReceiveRequests.push_back(item2.second);
 }
 
+void WalletModel::loadPCodeNotificationTransactions(std::vector<std::string>& vPCodeNotificationTransactions)
+{
+    LOCK(wallet->cs_wallet);
+    wallet->loadPCodeNotificationTransactions(vPCodeNotificationTransactions);
+    
+}
+
 bool WalletModel::saveReceiveRequest(const std::string &sAddress, const int64_t nId, const std::string &sRequest)
 {
     CTxDestination dest = CBitcoinAddress(sAddress).Get();
@@ -1058,6 +1082,22 @@ bool WalletModel::saveReceiveRequest(const std::string &sAddress, const int64_t 
         return wallet->EraseDestData(dest, key);
     else
         return wallet->AddDestData(dest, key, sRequest);
+    
+}
+
+bool WalletModel::savePCodeNotificationTransaction(const std::string &rpcodestr, const int64_t nId, const std::string &sNotificationSent)
+{
+
+    std::stringstream ss;
+    ss << nId;
+    std::string key = "pnts" + ss.str(); // "pnts" prefix = "paymentcode Notification transaction sent" in destdata
+
+    LOCK(wallet->cs_wallet);
+    if (sNotificationSent.empty())
+        return wallet->ErasePCodeNotificationData(rpcodestr, key);
+    else
+        return wallet->AddPCodeNotificationData(rpcodestr, key, sNotificationSent);
+    return true;
 }
 
 bool WalletModel::transactionCanBeAbandoned(uint256 hash) const

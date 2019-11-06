@@ -342,6 +342,13 @@ public:
     void ListBip47PaymentChannel(std::map <string, Bip47PaymentChannel> &mPchannels);
     
     bool WritePaymentChannelData();
+    
+    /// Write destination data key,value tuple to database
+    bool WritePcodeNotificationData(const std::string &rpcodestr, const std::string &key, const std::string &value);
+    /// Erase destination data tuple from wallet database
+    bool ErasePcodeNotificationData(const std::string &rpcodestr, const std::string &key);
+    bool loadPCodeNotificationTransactions(std::vector<std::string>& vPCodeNotificationTransactions);
+    
 #ifdef ENABLE_EXODUS
 
     template<class MintPool>

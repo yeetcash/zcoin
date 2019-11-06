@@ -77,7 +77,7 @@ private:
      * 
      * 
      * */
-    void processPaymentCodeTransactions();
+    void processPaymentCodeTransactions(bool isSecondTx = false);
 
 private Q_SLOTS:
     void on_sendButton_clicked();

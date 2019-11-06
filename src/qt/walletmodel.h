@@ -19,6 +19,7 @@
 #include <QObject>
 
 class AddressTableModel;
+class PaymentCodeTableModel;
 class OptionsModel;
 class PlatformStyle;
 class RecentRequestsTableModel;
@@ -41,7 +42,7 @@ QT_END_NAMESPACE
 class SendCoinsRecipient
 {
 public:
-    explicit SendCoinsRecipient() : amount(0), fSubtractFeeFromAmount(false), nVersion(SendCoinsRecipient::CURRENT_VERSION), paymentCode(""), fnotifiactionTransactioin(false) { }
+    explicit SendCoinsRecipient() : amount(0), fSubtractFeeFromAmount(false), nVersion(SendCoinsRecipient::CURRENT_VERSION) { }
     explicit SendCoinsRecipient(const QString &addr, const QString &label, const CAmount& amount, const QString &message):
         address(addr), label(label), amount(amount), message(message), fSubtractFeeFromAmount(false), nVersion(SendCoinsRecipient::CURRENT_VERSION) {}
 
@@ -55,12 +56,6 @@ public:
     CAmount amount;
     // If from a payment request, this is used for storing the memo
     QString message;
-
-    //
-    // @todo works should be test adding new fields correctly works. 
-    //
-    QString paymentCode;
-    bool fnotifiactionTransactioin;
 
     // If from a payment request, paymentRequest.IsInitialized() will be true
     PaymentRequestPlus paymentRequest;
@@ -84,9 +79,6 @@ public:
             paymentRequest.SerializeToString(&sPaymentRequest);
         std::string sAuthenticatedMerchant = authenticatedMerchant.toStdString();
 
-        // @PaymentCode feild
-        std::string sPaymentCode = paymentCode.toStdString();
-
         READWRITE(this->nVersion);
         nVersion = this->nVersion;
         READWRITE(sAddress);
@@ -96,10 +88,6 @@ public:
         READWRITE(sPaymentRequest);
         READWRITE(sAuthenticatedMerchant);
 
-        // @PaymentCode feild
-        READWRITE(sPaymentCode);
-        READWRITE(fnotifiactionTransactioin);
-
         if (ser_action.ForRead())
         {
             address = QString::fromStdString(sAddress);
@@ -108,9 +96,6 @@ public:
             if (!sPaymentRequest.empty())
                 paymentRequest.parse(QByteArray::fromRawData(sPaymentRequest.data(), sPaymentRequest.size()));
             authenticatedMerchant = QString::fromStdString(sAuthenticatedMerchant);
-
-            // @PaymentCode feild
-            paymentCode = QString::fromStdString(sPaymentCode);
         }
     }
 };
@@ -149,6 +134,7 @@ public:
 
     OptionsModel *getOptionsModel();
     AddressTableModel *getAddressTableModel();
+    PaymentCodeTableModel *getPaymentCodeTableModel();
     TransactionTableModel *getTransactionTableModel();
     RecentRequestsTableModel *getRecentRequestsTableModel();
     RecentPCodeTransactionsTableModel *getRecentPCodeTransactionsTableModel();
@@ -167,6 +153,7 @@ public:
 
     // @bip47 validatePaymentCode
     bool validatePaymentCode(const QString &pCode);
+    bool isNotificationTransactionSent(const QString &pCode);
 
     // Return status record for SendCoins, contains error id + information
     struct SendCoinsReturn
@@ -182,7 +169,7 @@ public:
 
     // Send coins to a list of recipients
     SendCoinsReturn sendCoins(WalletModelTransaction &transaction);
-    SendCoinsReturn sendPCodeCoins(WalletModelTransaction &transaction);
+    SendCoinsReturn sendPCodeCoins(WalletModelTransaction &transaction, bool &needMainTx);
 
     // Wallet encryption
     bool setWalletEncrypted(bool encrypted, const SecureString &passphrase);
@@ -226,13 +213,16 @@ public:
     void listLockedCoins(std::vector<COutPoint>& vOutpts);
 
     void loadReceiveRequests(std::vector<std::string>& vReceiveRequests);
+    void loadPCodeNotificationTransactions(std::vector<std::string>& vPCodeNotificationTransactions);
     bool saveReceiveRequest(const std::string &sAddress, const int64_t nId, const std::string &sRequest);
+    bool savePCodeNotificationTransaction(const std::string &rpcodestr, const int64_t nId, const std::string &sNotificationSent);
 
     bool transactionCanBeAbandoned(uint256 hash) const;
     bool abandonTransaction(uint256 hash) const;
 
     bool transactionCanBeRebroadcast(uint256 hash) const;
     bool rebroadcastTransaction(uint256 hash);
+    
 
     // Sigma
     SendCoinsReturn prepareSigmaSpendTransaction(WalletModelTransaction &transaction,
@@ -260,6 +250,7 @@ private:
     OptionsModel *optionsModel;
 
     AddressTableModel *addressTableModel;
+    PaymentCodeTableModel *paymentCodeTableModel;
     TransactionTableModel *transactionTableModel;
     RecentRequestsTableModel *recentRequestsTableModel;
     RecentPCodeTransactionsTableModel *recentPCodeTransactionsTableModel;

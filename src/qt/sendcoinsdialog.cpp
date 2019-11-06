@@ -14,6 +14,7 @@
 #include "platformstyle.h"
 #include "sendcoinsentry.h"
 #include "walletmodel.h"
+#include "recentpaymentcodetransactionstablemodel.h"
 
 #include "base58.h"
 #include "coincontrol.h"
@@ -321,7 +322,7 @@ void SendCoinsDialog::on_sendButton_clicked()
     fNewRecipientAllowed = true;
 }
 
-void SendCoinsDialog::processPaymentCodeTransactions()
+void SendCoinsDialog::processPaymentCodeTransactions(bool isSecondTx)
 {
     if(!model || !model->getOptionsModel())
         return;
@@ -381,8 +382,13 @@ void SendCoinsDialog::processPaymentCodeTransactions()
 
     // Format confirmation message
     QStringList formatted;
+    bool is_notification_tx;
+    QString pcodeqstr;
     Q_FOREACH(const SendCoinsRecipient &rcp, currentTransaction.getRecipients())
     {
+        
+        bool is_pcode = model->validatePaymentCode(rcp.address);
+        is_notification_tx = !model->isNotificationTransactionSent(rcp.address);
         // generate bold amount string
         QString amount = "<b>" + BitcoinUnits::formatHtmlWithUnit(model->getOptionsModel()->getDisplayUnit(), rcp.amount);
         amount.append("</b>");
@@ -391,8 +397,13 @@ void SendCoinsDialog::processPaymentCodeTransactions()
         address.append("</span>");
 
         QString recipientElement;
-
-        if (!rcp.paymentRequest.IsInitialized()) // normal payment
+        
+        if(is_pcode && is_notification_tx)
+        {
+            pcodeqstr = rcp.address;
+            recipientElement = tr("%1 <br /> %2").arg("Your notification transaction will be broadcast first, followed by your main transaction.", "You can see and track your outbound transactions in the history list.");
+        }
+        else if (!rcp.paymentRequest.IsInitialized()) // normal payment
         {
             if(rcp.label.length() > 0) // label with address
             {
@@ -445,10 +456,23 @@ void SendCoinsDialog::processPaymentCodeTransactions()
     questionString.append(QString("<span style='font-size:10pt;font-weight:normal;'><br />(=%2)</span>")
         .arg(alternativeUnits.join(" " + tr("or") + "<br />")));
 
-    SendConfirmationDialog confirmationDialog(tr("Confirm send coins"),
-        questionString.arg(formatted.join("<br />")), SEND_CONFIRM_DELAY, this);
-    confirmationDialog.exec();
-    QMessageBox::StandardButton retval = (QMessageBox::StandardButton)confirmationDialog.result();
+    QMessageBox::StandardButton retval;
+    
+    if(is_notification_tx)
+    {
+        SendConfirmationDialog confirmationDialog(tr("Transaction in Progress"),
+        formatted.join("<br />"), SEND_CONFIRM_DELAY, this);
+        confirmationDialog.exec();
+        retval = (QMessageBox::StandardButton)confirmationDialog.result();
+    }
+    else
+    {
+        SendConfirmationDialog confirmationDialog(tr("Confirm send coins"),
+        questionString.arg(formatted.join("<br />")), isSecondTx ? 5 : SEND_CONFIRM_DELAY, this);
+        confirmationDialog.exec();
+        retval = (QMessageBox::StandardButton)confirmationDialog.result();
+    }
+    
 
     if(retval != QMessageBox::Yes)
     {
@@ -457,15 +481,24 @@ void SendCoinsDialog::processPaymentCodeTransactions()
     }
 
     // now send the prepared transaction
-    WalletModel::SendCoinsReturn sendStatus = model->sendPCodeCoins(currentTransaction);
+    bool needMainTx;
+    WalletModel::SendCoinsReturn sendStatus = model->sendPCodeCoins(currentTransaction, needMainTx);
     // process sendStatus and on error generate message shown to user
     processSendCoinsReturn(sendStatus);
 
     if (sendStatus.status == WalletModel::OK)
     {
+        LogPrintf("needMainTx is %s  isSecondTx is %s\n", needMainTx ? "True" : "False" , isSecondTx ? "True" : "False");
+        if(needMainTx && !isSecondTx)
+        {
+            LogPrintf("Process PaymentCode Main Transaction\n");
+            model->getRecentPCodeTransactionsTableModel()->addNewRequest(pcodeqstr, totalAmount);
+            processPaymentCodeTransactions(needMainTx);
+        }
         accept();
         CoinControlDialog::coinControl->UnSelectAll();
-        coinControlUpdateLabels();
+        coinControlUpdateLabels();    
+        
     }
     fNewRecipientAllowed = true;
 }

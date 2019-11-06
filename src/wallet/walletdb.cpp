@@ -1350,6 +1350,58 @@ void CWalletDB::ListBip47PaymentChannel(std::map <string, Bip47PaymentChannel> &
     pcursor->close();
 }
 
+bool CWalletDB::WritePcodeNotificationData(const std::string &rpcodestr, const std::string &key, const std::string &value) {
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("pcodentdata"), std::make_pair(rpcodestr, key)), value);
+}
+
+bool CWalletDB::ErasePcodeNotificationData(const std::string &rpcodestr, const std::string &key) {
+    nWalletDBUpdated++;
+    return Erase(std::make_pair(std::string("pcodentdata"), std::make_pair(rpcodestr, key)));
+}
+
+bool CWalletDB::loadPCodeNotificationTransactions(std::vector<std::string>& vPCodeNotificationTransactions)
+{
+    Dbc *pcursor = GetCursor();
+    if (!pcursor)
+        throw runtime_error("CWalletDB::loadPCodeNotificationTransactions() : cannot create DB cursor");
+    unsigned int fFlags = DB_SET_RANGE;
+    while (true) {
+        // Read next record
+        LogPrintf("Create CDataStream ssKey\n");
+        CDataStream ssKey(SER_DISK, CLIENT_VERSION);
+        if (fFlags == DB_SET_RANGE)
+            ssKey << make_pair(string("pcodentdata"), std::make_pair(string(""), string("")));
+        LogPrintf("Create CDataStream ssValue\n");
+        CDataStream ssValue(SER_DISK, CLIENT_VERSION);
+        LogPrintf("ReadAtCursor sskey and ssValue\n");
+        int ret = ReadAtCursor(pcursor, ssKey, ssValue, fFlags);
+        fFlags = DB_NEXT;
+        if (ret == DB_NOTFOUND)
+            break;
+        else if (ret != 0) {
+            pcursor->close();
+            throw runtime_error("CWalletDB::loadPCodeNotificationTransactions() : error scanning DB");
+        }
+        LogPrintf("Unserialize sskey and ssValue\n");
+        // Unserialize
+        string strType;
+        ssKey >> strType;
+        LogPrintf("strType is %s\n", strType);
+        if (strType != "pcodentdata")
+            break;
+        std::pair<string, string> key2data;
+        ssKey >> key2data;
+        LogPrintf("key2data is (%s,%s) \n", key2data.first, key2data.second);
+        LogPrintf("ssValue Size is %d\n", ssValue.size());
+        std::string notificationtxvalue;
+        ssValue >> notificationtxvalue;
+        vPCodeNotificationTransactions.push_back(notificationtxvalue);
+    }
+    pcursor->close();
+    return true;
+}
+
 bool CWalletDB::ReadMintCount(int32_t& nCount)
 {
     return Read(string("dzc"), nCount);

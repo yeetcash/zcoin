@@ -13,25 +13,26 @@
 
 #include <boost/foreach.hpp>
 #include <QMessageBox>
+#include <QString>
 
 RecentPCodeTransactionsTableModel::RecentPCodeTransactionsTableModel(CWallet *wallet, WalletModel *parent) :
     QAbstractTableModel(parent), walletModel(parent)
 {
     Q_UNUSED(wallet);
-    // nReceiveRequestsMaxId = 0;
+    nRecentPCodeNotificationMaxId = 0;
 
     // Load entries from wallet
-    // std::vector<std::string> vReceiveRequests;
-    // parent->loadReceiveRequests(vReceiveRequests);
-    // BOOST_FOREACH(const std::string& request, vReceiveRequests)
-        // addNewRequest(request);
-    RecentPCodeTransactionEntry  ptx1(1, 0.12, QString("PM8TJPxaf9jzF7JEU9eAgvFrUGvmCmYvdrY7TQbotrwhy7DjZimmPQSuSu32uCuRx3GfJmEN2sMypKsqrHZ849nMZFkCxBUYWri21nHARtMTUyj4dEoR"));
-    RecentPCodeTransactionEntry  ptx2(2, 0.35, QString("PM8TJPxaf9jzF7JEU9eAgvFrUGvmCmYvdrY7TQbotrwhy7DjZimmPQSuSu32uCuRx3GfJmEN2sMypKsqrHZ849nMZFkCxBUYWri21nHARtMTUyj4dEoR"));
-    RecentPCodeTransactionEntry  ptx3(3, 0.32, QString("PM8TJPxaf9jzF7JEU9eAgvFrUGTQbotrwhy7DjZimmPQSuSu32uCuRx3GfJmEN2sMypKsqrHZ849nMZFkCxBUYWri21nHARtMTUyj4dEoR"));
-
-    addNewRequest(ptx1);
-    addNewRequest(ptx2);
-    addNewRequest(ptx3);
+    std::vector<std::string> vPCodeNotificationTransactions;
+    parent->loadPCodeNotificationTransactions(vPCodeNotificationTransactions);
+    BOOST_FOREACH(const std::string& request, vPCodeNotificationTransactions)
+        addNewRequest(request);
+//     RecentPCodeTransactionEntry  ptx1(1, 0.12, QString("PM8TJPxaf9jzF7JEU9eAgvFrUGvmCmYvdrY7TQbotrwhy7DjZimmPQSuSu32uCuRx3GfJmEN2sMypKsqrHZ849nMZFkCxBUYWri21nHARtMTUyj4dEoR"));
+//     RecentPCodeTransactionEntry  ptx2(2, 0.35, QString("PM8TJPxaf9jzF7JEU9eAgvFrUGvmCmYvdrY7TQbotrwhy7DjZimmPQSuSu32uCuRx3GfJmEN2sMypKsqrHZ849nMZFkCxBUYWri21nHARtMTUyj4dEoR"));
+//     RecentPCodeTransactionEntry  ptx3(3, 0.32, QString("PM8TJPxaf9jzF7JEU9eAgvFrUGTQbotrwhy7DjZimmPQSuSu32uCuRx3GfJmEN2sMypKsqrHZ849nMZFkCxBUYWri21nHARtMTUyj4dEoR"));
+// 
+//     addNewRequest(ptx1);
+//     addNewRequest(ptx2);
+//     addNewRequest(ptx3);
 
     /* These columns must match the indices in the ColumnIndex enumeration */
     columns << "Receiver's Masked Payment Code" << "Fee" << "Timestamp";
@@ -73,7 +74,8 @@ QVariant RecentPCodeTransactionsTableModel::data(const QModelIndex &index, int r
         case RPCode:
             return rec->rpcode;
         case Fee:
-            return QString("%1 XZC").arg(QString::number(rec->fee, 'f', 8));
+            return QString("%1 XZC").arg(BitcoinUnits::format(walletModel->getOptionsModel()->getDisplayUnit(), rec->fee, false, BitcoinUnits::separatorNever));
+//             return QString("%1 XZC").arg(QString::number(rec->fee, 'f', 8));
             // if(rec->recipient.label.isEmpty() && role == Qt::DisplayRole)
             // {
             //     return tr("(no label)");
@@ -167,7 +169,7 @@ bool RecentPCodeTransactionsTableModel::removeRows(int row, int count, const QMo
     // } else {
     //     return false;
     // }
-    return true;
+    return false;
 }
 
 Qt::ItemFlags RecentPCodeTransactionsTableModel::flags(const QModelIndex &index) const
@@ -176,39 +178,40 @@ Qt::ItemFlags RecentPCodeTransactionsTableModel::flags(const QModelIndex &index)
 }
 
 // called when adding a request from the GUI
-// void RecentPCodeTransactionsTableModel::addNewRequest(const SendCoinsRecipient &recipient)
-// {
-//     RecentRequestEntry newEntry;
-//     newEntry.id = ++nReceiveRequestsMaxId;
-//     newEntry.date = QDateTime::currentDateTime();
-//     newEntry.recipient = recipient;
+void RecentPCodeTransactionsTableModel::addNewRequest(const QString &rpcode, CAmount fee)
+{
+    RecentPCodeTransactionEntry newEntry;
+    newEntry.id = ++nRecentPCodeNotificationMaxId;
+    newEntry.date = QDateTime::currentDateTime();
+    newEntry.rpcode = rpcode;
+    newEntry.fee = fee;
 
-//     CDataStream ss(SER_DISK, CLIENT_VERSION);
-//     ss << newEntry;
+    CDataStream ss(SER_DISK, CLIENT_VERSION);
+    ss << newEntry;
 
-//     if (!walletModel->saveReceiveRequest(recipient.address.toStdString(), newEntry.id, ss.str()))
-//         return;
+    if (!walletModel->savePCodeNotificationTransaction(rpcode.toStdString(), newEntry.id, ss.str()))
+        return;
 
-//     addNewRequest(newEntry);
-// }
+    addNewRequest(newEntry);
+}
 
 // called from ctor when loading from wallet
-// void RecentPCodeTransactionsTableModel::addNewRequest(const std::string &recipient)
-// {
-//     std::vector<char> data(recipient.begin(), recipient.end());
-//     CDataStream ss(data, SER_DISK, CLIENT_VERSION);
+void RecentPCodeTransactionsTableModel::addNewRequest(const std::string &recipient)
+{
+    std::vector<char> data(recipient.begin(), recipient.end());
+    CDataStream ss(data, SER_DISK, CLIENT_VERSION);
 
-//     RecentRequestEntry entry;
-//     ss >> entry;
+    RecentPCodeTransactionEntry entry;
+    ss >> entry;
 
-//     if (entry.id == 0) // should not happen
-//         return;
+    if (entry.id == 0) // should not happen
+        return;
 
-//     if (entry.id > nReceiveRequestsMaxId)
-//         nReceiveRequestsMaxId = entry.id;
+    if (entry.id > nRecentPCodeNotificationMaxId)
+        nRecentPCodeNotificationMaxId = entry.id;
 
-//     addNewRequest(entry);
-// }
+    addNewRequest(entry);
+}
 
 // actually add to table in GUI
 void RecentPCodeTransactionsTableModel::addNewRequest(RecentPCodeTransactionEntry &recipient)

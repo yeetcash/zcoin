@@ -45,7 +45,7 @@ private:
     bool fFilterUpdated;
 
 public Q_SLOTS:
-    void copy_button_clicked();
+    void on_copyPaymentcodeButton_clicked();
 
 Q_SIGNALS:
 

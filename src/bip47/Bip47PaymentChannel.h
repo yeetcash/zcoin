@@ -37,7 +37,7 @@ class Bip47PaymentChannel {
         void generateKeys(CWallet *bip47Wallet) ;
         Bip47Address* getIncomingAddress(string address) ;
         void addNewIncomingAddress(string newAddress, int nextIndex) ;
-        string getLabel() ;
+        string getLabel() const;
         void setLabel(string l) ;
         std::vector<string>& getOutgoingAddresses() ;
 
