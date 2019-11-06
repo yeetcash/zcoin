@@ -14,8 +14,6 @@
 #include "txmempool.h"
 #include "util.h"
 #include "utilstrencodings.h"
-#include "bip47/PaymentCode.h"
-#include "bip47/Bip47Account.h"
 #ifdef ENABLE_WALLET
 #include "znode-sync.h"
 #include "wallet/wallet.h"
@@ -1191,7 +1189,6 @@ static const CRPCCommand commands[] =
     { "util",               "createmultisig",         &createmultisig,         true  },
     { "util",               "verifymessage",          &verifymessage,          true  },
     { "util",               "signmessagewithprivkey", &signmessagewithprivkey, true  },
-    
 
         /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
