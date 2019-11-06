@@ -31,6 +31,7 @@
 #include "bip47/Bip47Account.h"
 #include "bip47/Bip47Util.h"
 
+
 #include <znode-payments.h>
 
 #include <stdint.h>
@@ -4181,6 +4182,7 @@ UniValue getPaymentCodeFromNotificationTx(const UniValue& params, bool fHelp)
                 LogPrintf("saveBip47PaymentChannelData\n");
                 pwalletMain->saveBip47PaymentChannelData(pcode.toString());
             }
+
             return pcode.toString();
         }
         else
@@ -4552,6 +4554,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "PaymentAddressSelfCheck",     &PaymentAddressSelfCheck,     false },
     { "wallet",              "validatepcode",       &validatepcode,      true  },
     
+
 };
 
 void RegisterWalletRPCCommands(CRPCTable &tableRPC)

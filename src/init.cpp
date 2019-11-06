@@ -1875,6 +1875,7 @@ bool AppInit2(boost::thread_group &threadGroup, CScheduler &scheduler) {
         exodus_init();
 
         // Exodus code should be initialized and wallet should now be loaded, perform an initial populate
+
         CheckWalletUpdate();
     }
 #endif

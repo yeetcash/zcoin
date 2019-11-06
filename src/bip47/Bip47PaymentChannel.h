@@ -6,6 +6,7 @@
 #include "serialize.h"
 #include "streams.h"
 
+
 class CWallet;
 
 class Bip47PaymentChannel {
@@ -39,6 +40,7 @@ class Bip47PaymentChannel {
         string getLabel() ;
         void setLabel(string l) ;
         std::vector<string>& getOutgoingAddresses() ;
+
         bool isNotificationTransactionSent() ;
         void setStatusSent() ;
         int getCurrentOutgoingIndex() ;

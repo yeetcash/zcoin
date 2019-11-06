@@ -139,7 +139,6 @@ bool BIP47Util::getScriptSigPubkey(CTxIn txin, vector<unsigned char>& pubkeyByte
     }
 
     LogPrintf("Script did not match expected form: \n");
-    
     return false;
 }
 

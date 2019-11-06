@@ -173,7 +173,7 @@ public:
         nCreateTime = nCreateTime_;
     }
 
-    bool ParseComponents(){
+    bool ParseComponents() {
         std::vector<std::string> nComponents;
         if(hdKeypath=="m")
             return false;

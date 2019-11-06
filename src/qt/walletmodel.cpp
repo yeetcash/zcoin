@@ -609,8 +609,6 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
             SecretPoint secretPoint(dataPriv, dataPub);
             LogPrintf("Generating Secret Point with \n privekey: %s\n pubkey: %s\n", HexStr(dataPriv), HexStr(dataPub));
 
-
-
             vector<unsigned char> outpoint(newTx->vin[0].prevout.hash.begin(), newTx->vin[0].prevout.hash.end());
 
             LogPrintf("output: %s\n", newTx->vin[0].prevout.hash.GetHex());
@@ -649,6 +647,22 @@ WalletModel::SendCoinsReturn WalletModel::preparePCodeTransaction(WalletModelTra
             }
         }
 
+
+        if (!BIP47Util::getScriptSigPubkey(newTx->vin[0], pubKeyBytes))
+        {
+            throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig GetPubkey error\n");
+        }
+        else
+        {
+            
+            designatedPubKey.Set(pubKeyBytes.begin(), pubKeyBytes.end());
+            LogPrintf("ScriptSigPubKey Hash %s\n", designatedPubKey.GetHash().GetHex());
+            if(!privKey.VerifyPubKey(designatedPubKey))
+            {
+                throw std::runtime_error("Bip47Utiles PaymentCode ScriptSig designatedPubKey cannot be verified \n");
+            }
+            
+        }
 
 
         transaction.setTransactionFee(nFeeRequired);

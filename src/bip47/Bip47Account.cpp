@@ -139,5 +139,5 @@ CExtKey Bip47Account::keyPrivAt(int idx)
     }
     
     return result;
-    
+
 }

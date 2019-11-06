@@ -60,6 +60,7 @@ class PaymentCode {
     bool isValid() ;
     static bool createMasterPubKeyFromPaymentCode(string payment_code_str,CExtPubKey &masterPubKey) ;
     static bool createMasterPubKeyFromBytes(std::vector<unsigned char> &pub, std::vector<unsigned char> &chain,CExtPubKey &masterPubKey) ;
+
     
 };
 #endif

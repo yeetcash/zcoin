@@ -69,6 +69,7 @@ bool SecretPoint::SelfTest(CWallet* wallet)
     
     
     CPubKey pubkey1, pubkey2;
+
     std::vector<unsigned char> pubkeyPcode =
     ParseHex("03c5f5da29143d68b2415bf9214bc8dcfe059c640f416deb7ba4021e3b33857237");
     std::vector<unsigned char> scriptSigPub =
@@ -80,6 +81,7 @@ bool SecretPoint::SelfTest(CWallet* wallet)
     
     pubkey1.Set(pubkeyPcode.begin(), pubkeyPcode.end());
     pubkey2.Set(scriptSigPub.begin(), scriptSigPub.end());
+
 
 //     if (!wallet->GetKeyFromPool(pubkey1))
 //     {

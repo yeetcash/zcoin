@@ -96,9 +96,11 @@ PaymentcodePage::~PaymentcodePage()
 }
 
 void PaymentcodePage::copy_button_clicked() {
+
 //     QMessageBox::information(this, tr("Success"),
 //         tr("copy_button_clicked"),
 //         QMessageBox::Ok, QMessageBox::Ok);
+
     GUIUtil::setClipboard(ui->paymentcodeLabel->toPlainText());
 }
 

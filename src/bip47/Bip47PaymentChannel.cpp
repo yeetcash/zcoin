@@ -5,6 +5,7 @@
 #include "PaymentAddress.h"
 
 
+
 string Bip47PaymentChannel::TAG = "Bip47PaymentChannel";
 
 int Bip47PaymentChannel::STATUS_NOT_SENT = -1;

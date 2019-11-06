@@ -1235,6 +1235,7 @@ public:
     
     bool savePaymentCode(PaymentCode from_pcode);
 
+
     Bip47Account getBip47Account(int i);
     
     std::string getNotifiactionAddress();
