@@ -561,10 +561,12 @@ void BitcoinGUI::createToolBars()
         toolbar->addAction(zc2SigmaAction);
         toolbar->addAction(znodeAction);
 
+#ifdef ENABLE_EXODUS
         if (isExodusEnabled()) {
             toolbar->addAction(exoAssetsAction);
             toolbar->addAction(toolboxAction);
         }
+#endif
 
         overviewAction->setChecked(true);
     }
